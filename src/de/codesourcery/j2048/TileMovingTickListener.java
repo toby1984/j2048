@@ -30,12 +30,12 @@ public class TileMovingTickListener implements ITickListener
 		this.destY = GameScreen.BORDER_THICKNESS + destTileY * ScreenState.TILE_HEIGHT + yBorderOffset;
 
 		if ( t.tileX != destTileX ) {
-			this.deltaX = (destX - currentX) / 6.0f;
+			this.deltaX = destTileX > t.tileX ? 1f : -1f; // (destX - currentX) / 12.0f;
 		} else {
 			this.deltaX = 0;
 		}
 		if ( t.tileY != destTileY ) {
-			this.deltaY = (destY - currentY ) / 6.0f;
+			this.deltaY = destTileY > t.tileY ? 1f : -1f; // (destY - currentY ) / 12.0f;
 		} else {
 			this.deltaY = 0;
 		}

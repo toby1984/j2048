@@ -14,7 +14,61 @@ public class ScreenState implements ITickListener
 
 	private final List<Tile> tilesToRemove = new ArrayList<Tile>();	
 	private final List<Tile> tiles = new ArrayList<Tile>();
-
+	
+	public final List<List<Runnable>> batches = new ArrayList<>();
+	
+	private Batch currentBatch = null;
+	
+	public final class Batch implements AutoCloseable 
+	{
+		private final List<Runnable> members = new ArrayList<>();
+		
+		private final boolean autoCommit;
+		
+		public Batch(boolean autoCommit) {
+			this.autoCommit = autoCommit;
+		}
+		
+		public void add(Runnable r) {
+			members.add( r );
+			if ( autoCommit ) {
+				syncPoint();
+			}
+		}
+		
+		public void syncPoint() 
+		{
+			if ( ! members.isEmpty() ) 
+			{
+				batches.add( new ArrayList<>(members ) );
+				members.clear();
+			}
+		}
+		
+		public void close() {
+			syncPoint();
+			currentBatch = null;
+		}
+	}
+	
+	public Batch startBatch() 
+	{
+		if ( currentBatch != null ) {
+			currentBatch.close();
+		}
+		currentBatch = new Batch(false);
+		return currentBatch;
+	}
+	
+	private Batch currentBatch() 
+	{
+		if ( currentBatch == null ) {
+			new Exception("=== auto-commit batch ===").printStackTrace();
+			currentBatch = new Batch(true);
+		}
+		return currentBatch;
+	}
+	
 	public final class Tile implements ITickListener
 	{
 			public int tileX;
@@ -40,13 +94,16 @@ public class ScreenState implements ITickListener
 
 			public void moveTo(int dstX,int dstY)
 			{
-				queue( new TileMovingTickListener( this , dstX , dstY ) );
-				queue( ctx -> 
+				currentBatch().add( () -> 
 				{
-					this.tileX = dstX;
-					this.tileY = dstY;					
-					return false;
-				} );
+					queue( new TileMovingTickListener( this , dstX , dstY ) );
+					queue( ctx -> 
+					{
+						this.tileX = dstX;
+						this.tileY = dstY;					
+						return false;
+					} );
+				});
 			}
 			
 			public boolean isOccupied() {
@@ -90,8 +147,9 @@ public class ScreenState implements ITickListener
 					{
 						delegates.remove(tmp);
 					}
+					return true;
 				}
-				return true;
+				return false;
 			}
 
 			public void setValue(int tileValue) {
@@ -116,7 +174,7 @@ public class ScreenState implements ITickListener
 
 	public void clear(int tileX,int tileY)
 	{
-		getTile(tileX,tileY,true).setValue( BoardState.EMPTY_TILE );
+		currentBatch().add( () -> getTile(tileX,tileY,true).setValue( BoardState.EMPTY_TILE ) );
 	}
 
 	private Tile getTile(int x,int y)
@@ -142,12 +200,16 @@ public class ScreenState implements ITickListener
 	public void setTileValue(int tileX,int tileY,int tileValue)
 	{
 		System.out.println("setTileValue("+tileX+","+tileY+") = "+tileValue);
-		Tile t = getTile(tileX,tileY,false);
-		if ( t == null ) {
-			tiles.add( new Tile(tileX,tileY,tileValue) );
-		} else {
-			t.setValue( tileValue );
-		}
+		currentBatch().add( () -> 
+		{
+			Tile t = getTile(tileX,tileY,false);
+			if ( t == null ) 
+			{
+				tiles.add( new Tile(tileX,tileY,tileValue) );
+			} else {
+				t.setValue( tileValue );
+			}
+		});
 	}
 
 	public void visitOccupiedTiles(Consumer<Tile> visitor)
@@ -164,24 +226,32 @@ public class ScreenState implements ITickListener
 	public void moveTile(int srcX,int srcY,int dstX,int dstY)
 	{
 		System.out.println("moveTile(): ("+srcX+","+srcY+") -> ("+dstX+","+dstY+")");
-		getTile(srcX,srcY).moveTo( dstX , dstY );
+		currentBatch().add( () -> getTile(srcX,srcY).moveTo( dstX , dstY ) );
 	}
 
 	@Override
 	public boolean tick(ITickContext ctx) 
 	{
+		boolean tilesBusy = false;
 		for ( Tile t : tiles ) {
-			t.tick( ctx );
+			tilesBusy |= t.tick( ctx );
 		}
 		if ( ! tilesToRemove.isEmpty() ) {
 			tiles.removeAll( tilesToRemove );
 			tilesToRemove.clear();
+		}
+		if ( ! tilesBusy && ! batches.isEmpty() ) 
+		{
+			batches.remove(0).forEach( Runnable::run );
 		}
 		return true;
 	}
 	
 	public boolean isInSyncWithBoardState() 
 	{
+		if ( ! batches.isEmpty() ) {
+			return false;
+		}
 		for ( Tile t : tiles ) {
 			if ( t.hasPendingChanges() ) {
 				return false;

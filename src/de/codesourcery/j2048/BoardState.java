@@ -1,5 +1,7 @@
 package de.codesourcery.j2048;
 
+import de.codesourcery.j2048.ScreenState.Batch;
+
 public final class BoardState
 {
 	// grid size
@@ -88,6 +90,8 @@ public final class BoardState
 
 	public boolean tiltLeft() {
 
+		final Batch batch = screenState.startBatch();
+		
 		final boolean[] moved = {false};
 		final Runnable run = () ->
 		{
@@ -104,6 +108,8 @@ public final class BoardState
 		};
 
 		run.run();
+		batch.syncPoint();
+		
 		// merge left
 		boolean merged = false;
 		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
@@ -124,14 +130,20 @@ public final class BoardState
 				}
 			}
 		}
+		batch.syncPoint();	
+		
 		if ( merged ) {
 			run.run();
 		}
+		
+		batch.close();
 		return moved[0] | merged;
 	}
 
 	public boolean tiltRight()
 	{
+		final Batch batch = screenState.startBatch();
+		
 		final boolean[] moved = { false} ;
 
 		final Runnable run = () ->
@@ -148,6 +160,7 @@ public final class BoardState
 			}
 		};
 		run.run();
+		batch.syncPoint();
 
 		// merge right
 		boolean merged = false;
@@ -168,15 +181,21 @@ public final class BoardState
 				}
 			}
 		}
+		batch.syncPoint();
+		
 		if ( merged ) {
 			run.run();
 		}
+		batch.close();		
 		return moved[0] | merged;
 	}
 
 	public boolean tiltDown()
 	{
 		final boolean[] moved={false};
+		
+		final Batch batch = screenState.startBatch();
+		
 		final Runnable run = () -> {
 			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 			{
@@ -190,6 +209,8 @@ public final class BoardState
 			}
 		};
 		run.run();
+		batch.syncPoint();
+		
 		// merge downwards
 		boolean merged = false;
 		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
@@ -209,14 +230,18 @@ public final class BoardState
 				}
 			}
 		}
+		batch.syncPoint();
 		if ( merged ) {
 			run.run();
 		}
+		batch.close();
 		return moved[0] | merged;
 	}
 
 	public boolean tiltUp()
 	{
+		final Batch batch = screenState.startBatch();
+		
 		// move tiles up
 		final boolean[] moved = {false};
 		final Runnable run = () -> {
@@ -229,10 +254,12 @@ public final class BoardState
 						moved[0] |= moveTileUp(x, y);
 					}
 				}
-			}
+			}		
 		};
+		
 		run.run();
-
+		batch.syncPoint();			
+		
 		// merge adjacent tiles
 		boolean merged = false;
 		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
@@ -252,10 +279,14 @@ public final class BoardState
 				}
 			}
 		}
+		
+		batch.syncPoint();
 		// try to move remaining tiles to fill gaps
 		if ( merged ) {
 			run.run();
 		}
+		
+		batch.close();
 		return moved[0] | merged;
 	}
 

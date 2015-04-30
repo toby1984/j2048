@@ -140,15 +140,13 @@ public class Main
 		keyListener.clearInput();
 		state.reset();
 
-		state.setTileValue( 1 , 1 ,1 );
 		state.setTileValue( 1 , 3 ,1 );
+		state.setTileValue( 2 , 3 ,1 );
+		state.setTileValue( 3 , 3 ,1 );
 		
-		//		state.setTile( 1 , 3 ,1 );
-		//		state.setTile( 2 , 3 ,1 );
-		//		state.setTile( 3 , 3 ,1 );
-		// setRandomTile(state);
+		setRandomTile(state);
 	}
-	
+
 	private void setRandomTile(BoardState state)
 	{
 		if ( 1 != 2 ) {
