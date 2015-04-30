@@ -1,5 +1,7 @@
 package de.codesourcery.j2048;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import de.codesourcery.j2048.TickListenerContainer.ITickContext;
@@ -11,7 +13,7 @@ public class ScreenState
 	public static final int TILE_HEIGHT = 75;
 
 	private final TickListenerContainer container;
-	private final Tile[] tiles = new Tile[ GameState.GRID_COLS*GameState.GRID_ROWS ];
+	private final List<Tile> tiles = new ArrayList<Tile>();
 
 	public final class Tile implements ITickListener
 	{
@@ -23,6 +25,7 @@ public class ScreenState
 			public int y;
 
 			private ITickListener delegate = null;
+			public boolean discarded = false;
 
 			protected Tile(int tileX, int tileY, int value)
 			{
@@ -30,6 +33,18 @@ public class ScreenState
 				this.tileY = tileY;
 				this.value = value;
 				updateScreenLocation( tileX , tileY );
+			}
+
+			public void moveTo(int dstX,int dstY)
+			{
+				final ITickListener l = new TileMovingTickListener( this , dstX , dstY );
+				if ( delegate == null ) {
+					delegate = l;
+				} else {
+					delegate = new ChainingTickListener( this.delegate , l );
+				}
+				this.tileX = dstX;
+				this.tileY = dstY;
 			}
 
 			public void updateScreenLocation(int tileX,int tileY)
@@ -40,12 +55,11 @@ public class ScreenState
 				this.y = GameScreen.BORDER_THICKNESS + this.tileY * TILE_HEIGHT + yBorderOffset;
 			}
 
-			public boolean isOccupied() {
-				return value != GameState.EMPTY_TILE;
-			}
-
-			public void reset()
+			public void discard()
 			{
+				container.removeTickListener( this );
+				tiles.remove( this );
+				this.discarded = true;
 				this.delegate = null;
 			}
 
@@ -73,59 +87,64 @@ public class ScreenState
 	public ScreenState(TickListenerContainer container)
 	{
 		this.container=container;
-		for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
-		{
-			for ( int y = 0 ; y < GameState.GRID_ROWS ; y++ )
-			{
-				int ptr = x + y*GameState.GRID_COLS;
-				tiles[ptr] = new Tile(x,y,GameState.EMPTY_TILE);
-			}
-		}
-		for ( Tile t : tiles ) {
-			container.addTickListener( t );
-		}
 	}
 
 	public void reset()
 	{
 		for ( Tile t : tiles ) {
-			t.reset();
+			t.discard();
 		}
 	}
 
 	public void discard(int tileX,int tileY)
 	{
-		for ( Tile t : tiles )
-		{
-			if ( t.tileX == tileX && t.tileY == tileY )
+		Tile t = getTile(tileX,tileY,false);
+		if ( t != null ) {
+			t.discard();
+		}
+	}
+
+	private Tile getTile(int x,int y)
+	{
+		return getTile(x,y,true);
+	}
+
+	private Tile getTile(int x,int y,boolean failOnMissing)
+	{
+		for (int i = 0; i < tiles.size(); i++) {
+			final Tile t = tiles.get(i);
+			if ( t.tileX == x && t.tileY == y )
 			{
-				t.value = GameState.EMPTY_TILE;
-				return;
+				return t;
 			}
 		}
+		if ( failOnMissing ) {
+			throw new IllegalStateException("No tile "+x+","+y);
+		}
+		return null;
 	}
 
 	public void setTileValue(int tileX,int tileY,int tileValue)
 	{
-		for (int i = 0; i < tiles.length; i++)
-		{
-			final Tile t = tiles[i];
-			if ( t.tileX == tileX && t.tileY == tileY )
-			{
-				System.out.println("set(): Updating tile value of "+t+" to "+tileValue);
-				t.value = tileValue;
-				return;
-			}
+		Tile t = getTile(tileX,tileY,false);
+		if ( t == null ) {
+			t = new Tile(tileX,tileY,tileValue);
+			tiles.add( t );
+			container.addTickListener( t );
+		} else {
+			t.value = tileValue;
 		}
 	}
 
 	public void visitTiles(Consumer<Tile> visitor)
 	{
-		for (int i = 0; i < tiles.length; i++) {
-			Tile t = tiles[i];
-			if ( t.isOccupied() ) {
-				visitor.accept(t);
-			}
+		for (int i = 0; i < tiles.size(); i++) {
+			visitor.accept( tiles.get(i) );
 		}
+	}
+
+	public void moveTile(int srcX,int srcY,int dstX,int dstY)
+	{
+		getTile(srcX,srcY).moveTo( dstX , dstY );
 	}
 }

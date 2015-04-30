@@ -54,16 +54,26 @@ public final class GameState
 
 	public void setTileValue(int x,int y,int value)
 	{
+		internalSetTileValue(x,y,value);
+		screenState.setTileValue( x , y , value );
+	}
+
+	private void internalSetTileValue(int x,int y,int value)
+	{
 		final int ptr = x+y*GRID_COLS;
 		grid[ptr] = value;
-		screenState.setTileValue( x , y , value );
 	}
 
 	private void clearTile(int x,int y)
 	{
+		internalClearTile(x,y);
+		screenState.setTileValue( x, y , GameState.EMPTY_TILE );
+	}
+
+	private void internalClearTile(int x,int y)
+	{
 		final int ptr = x+y*GRID_COLS;
 		grid[ptr] = EMPTY_TILE;
-		screenState.setTileValue( x, y , GameState.EMPTY_TILE );
 	}
 
 	public boolean isOccupied(int x,int y) {
@@ -263,13 +273,18 @@ public final class GameState
 	private boolean moveTileUp(int x,int y)
 	{
 		boolean moved = false;
+		final int initialX = x;
+		final int initialY = y;
 		while ( y < GameState.GRID_ROWS-1 && isEmpty(x, y+1 ) )
 		{
 			moved = true;
-			setTileValue( x,y+1, getTile(x, y) );
-			clearTile(x,y);
+			internalSetTileValue( x,y+1, getTile(x, y) );
+			internalClearTile(x,y);
 			y++;
 			moved=true;
+		}
+		if ( moved ) {
+			screenState.moveTile(initialX,initialY,x,y-1);
 		}
 		return moved;
 	}
