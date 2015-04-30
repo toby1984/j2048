@@ -7,12 +7,12 @@ import java.util.function.Consumer;
 import de.codesourcery.j2048.TickListenerContainer.ITickContext;
 import de.codesourcery.j2048.TickListenerContainer.ITickListener;
 
-public class ScreenState
+public class ScreenState implements ITickListener
 {
 	public static final int TILE_WIDTH = 75;
 	public static final int TILE_HEIGHT = 75;
 
-	private final TickListenerContainer container;
+	private final List<Tile> tilesToRemove = new ArrayList<Tile>();	
 	private final List<Tile> tiles = new ArrayList<Tile>();
 
 	public final class Tile implements ITickListener
@@ -24,8 +24,7 @@ public class ScreenState
 			public int x;
 			public int y;
 
-			private ITickListener delegate = null;
-			public boolean discarded = false;
+			private final List<ITickListener> delegates=new ArrayList<>();
 
 			protected Tile(int tileX, int tileY, int value)
 			{
@@ -34,17 +33,24 @@ public class ScreenState
 				this.value = value;
 				updateScreenLocation( tileX , tileY );
 			}
+			
+			public boolean hasPendingChanges() {
+				return ! delegates.isEmpty();
+			}
 
 			public void moveTo(int dstX,int dstY)
 			{
-				final ITickListener l = new TileMovingTickListener( this , dstX , dstY );
-				if ( delegate == null ) {
-					delegate = l;
-				} else {
-					delegate = new ChainingTickListener( this.delegate , l );
-				}
-				this.tileX = dstX;
-				this.tileY = dstY;
+				queue( new TileMovingTickListener( this , dstX , dstY ) );
+				queue( ctx -> 
+				{
+					this.tileX = dstX;
+					this.tileY = dstY;					
+					return false;
+				} );
+			}
+			
+			public boolean isOccupied() {
+				return value != BoardState.EMPTY_TILE;
 			}
 
 			public void updateScreenLocation(int tileX,int tileY)
@@ -54,13 +60,19 @@ public class ScreenState
 				this.x = GameScreen.BORDER_THICKNESS + this.tileX * TILE_WIDTH  + xBorderOffset;
 				this.y = GameScreen.BORDER_THICKNESS + this.tileY * TILE_HEIGHT + yBorderOffset;
 			}
-
-			public void discard()
+			
+			public void destroy() 
 			{
-				container.removeTickListener( this );
-				tiles.remove( this );
-				this.discarded = true;
-				this.delegate = null;
+				queue( ctx -> 
+				{
+					tilesToRemove.add( this );				
+					this.delegates.clear();					
+					return false;
+				});				
+			}
+
+			private void queue(ITickListener l) {
+				this.delegates.add( l );
 			}
 
 			@Override
@@ -71,37 +83,40 @@ public class ScreenState
 			@Override
 			public boolean tick(ITickContext ctx)
 			{
-				ITickListener tmp = delegate;
+				final ITickListener tmp = delegates.isEmpty() ? null : delegates.get( 0 );
 				if ( tmp!= null )
 				{
 					if ( ! tmp.tick( ctx ) )
 					{
-						delegate = null;
+						delegates.remove(tmp);
 					}
 				}
 				return true;
 			}
 
+			public void setValue(int tileValue) {
+				queue( ctx -> 
+				{
+					value = tileValue;
+					return false;
+				});
+			}
 	}
 
 	public ScreenState(TickListenerContainer container)
 	{
-		this.container=container;
+		container.addTickListener(this);
 	}
 
 	public void reset()
 	{
-		for ( Tile t : tiles ) {
-			t.discard();
-		}
+		tilesToRemove.clear();
+		tiles.clear();
 	}
 
-	public void discard(int tileX,int tileY)
+	public void clear(int tileX,int tileY)
 	{
-		Tile t = getTile(tileX,tileY,false);
-		if ( t != null ) {
-			t.discard();
-		}
+		getTile(tileX,tileY,true).setValue( BoardState.EMPTY_TILE );
 	}
 
 	private Tile getTile(int x,int y)
@@ -126,25 +141,52 @@ public class ScreenState
 
 	public void setTileValue(int tileX,int tileY,int tileValue)
 	{
+		System.out.println("setTileValue("+tileX+","+tileY+") = "+tileValue);
 		Tile t = getTile(tileX,tileY,false);
 		if ( t == null ) {
-			t = new Tile(tileX,tileY,tileValue);
-			tiles.add( t );
-			container.addTickListener( t );
+			tiles.add( new Tile(tileX,tileY,tileValue) );
 		} else {
-			t.value = tileValue;
+			t.setValue( tileValue );
 		}
 	}
 
-	public void visitTiles(Consumer<Tile> visitor)
+	public void visitOccupiedTiles(Consumer<Tile> visitor)
 	{
-		for (int i = 0; i < tiles.size(); i++) {
-			visitor.accept( tiles.get(i) );
+		for (int i = 0; i < tiles.size(); i++) 
+		{
+			final Tile t = tiles.get(i);
+			if ( t.isOccupied() ) {
+				visitor.accept( t  );
+			}
 		}
 	}
 
 	public void moveTile(int srcX,int srcY,int dstX,int dstY)
 	{
+		System.out.println("moveTile(): ("+srcX+","+srcY+") -> ("+dstX+","+dstY+")");
 		getTile(srcX,srcY).moveTo( dstX , dstY );
+	}
+
+	@Override
+	public boolean tick(ITickContext ctx) 
+	{
+		for ( Tile t : tiles ) {
+			t.tick( ctx );
+		}
+		if ( ! tilesToRemove.isEmpty() ) {
+			tiles.removeAll( tilesToRemove );
+			tilesToRemove.clear();
+		}
+		return true;
+	}
+	
+	public boolean isInSyncWithBoardState() 
+	{
+		for ( Tile t : tiles ) {
+			if ( t.hasPendingChanges() ) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

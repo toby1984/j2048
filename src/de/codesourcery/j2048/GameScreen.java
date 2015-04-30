@@ -20,8 +20,8 @@ public final class GameScreen extends JPanel
 
 	public static final int BOARD_Y_OFFSET = 40;
 
-	public static final int WIDTH  = GameState.GRID_COLS * ScreenState.TILE_WIDTH  + (GameState.GRID_COLS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
-	public static final int HEIGHT = BOARD_Y_OFFSET + GameState.GRID_ROWS * ScreenState.TILE_HEIGHT + (GameState.GRID_ROWS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
+	public static final int WIDTH  = BoardState.GRID_COLS * ScreenState.TILE_WIDTH  + (BoardState.GRID_COLS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
+	public static final int HEIGHT = BOARD_Y_OFFSET + BoardState.GRID_ROWS * ScreenState.TILE_HEIGHT + (BoardState.GRID_ROWS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
 
 	private final Object BUFFER_LOCK = new Object();
 
@@ -115,7 +115,7 @@ public final class GameScreen extends JPanel
 		}
 	}
 
-	public void render(GameState state)
+	public void render(BoardState state)
 	{
 		synchronized(BUFFER_LOCK)
 		{
@@ -130,7 +130,7 @@ public final class GameScreen extends JPanel
 		}
 	}
 
-	private void doRender(GameState state)
+	private void doRender(BoardState state)
 	{
 		final Graphics2D gfx = getBackBufferGfx();
 		if ( numberFont == null ) {
@@ -144,22 +144,22 @@ public final class GameScreen extends JPanel
 		gfx.fillRect( 0 , 0 , WIDTH , HEIGHT );
 
 		// draw grid lines
-		final int boardWidth = WIDTH-5;
+		final int boardWidth = WIDTH;
 		final int boardHeight = HEIGHT - BOARD_Y_OFFSET-1;
 
 		gfx.setColor(Color.RED);
-		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= GameState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+1 )
+		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= BoardState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+1 )
 		{
 			gfx.drawLine( 0, y , boardWidth , y );
 		}
-		for ( int x=0,i = 0 ; i <= GameState.GRID_COLS ; i++, x += ScreenState.TILE_WIDTH+1 )
+		for ( int x=0,i = 0 ; i <= BoardState.GRID_COLS ; i++, x += ScreenState.TILE_WIDTH+1 )
 		{
 			gfx.drawLine( x , BOARD_Y_OFFSET , x , BOARD_Y_OFFSET+boardHeight );
 		}
 
 		// draw tiles
 		gfx.setFont( numberFont );
-		state.screenState.visitTiles( tile ->
+		state.screenState.visitOccupiedTiles( tile ->
 		{
 			final int value = 1 << tile.value;
 			final Rectangle r = new Rectangle( tile.x , BOARD_Y_OFFSET + tile.y , ScreenState.TILE_WIDTH , ScreenState.TILE_HEIGHT );

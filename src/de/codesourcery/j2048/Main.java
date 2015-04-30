@@ -31,7 +31,8 @@ public class Main
 
 	public void run()
 	{
-		final GameState state = new GameState( tickListeners );
+		final ScreenState screenState = new ScreenState( tickListeners );
+		final BoardState state = new BoardState( screenState );
 		restartGame(state);
 
 		final GameScreen panel = new GameScreen();
@@ -50,10 +51,10 @@ public class Main
 		frame.setVisible( true );
 		panel.requestFocus();
 
-		gameLoop(state, panel);
+		mainLoop(state, screenState , panel);
 	}
 
-	private void gameLoop(final GameState state, final GameScreen panel)
+	private void mainLoop(final BoardState state, final ScreenState screenState, final GameScreen panel)
 	{
 		// main loop
 		long time = System.currentTimeMillis();
@@ -65,18 +66,21 @@ public class Main
 			tickListeners.invokeTickListeners( deltaSeconds );
 
 			// process input and advance game state
-			final boolean validMove = processInput( state );
-			if ( validMove )
+			if ( screenState.isInSyncWithBoardState() )  // only process input once screen state is in sync with board state
 			{
-				if ( state.isBoardFull() )
+				final boolean validMove = processInput( state );
+				if ( validMove )
 				{
-					state.gameOver = true;
-				} else {
-					setRandomTile(state);
+					if ( state.isBoardFull() )
+					{
+						state.gameOver = true;
+					} else {
+						setRandomTile(state);
+					}
 				}
-			}
-			else if ( ! state.gameOver && state.isBoardFull() ) {
-				state.gameOver = true;
+				else if ( ! state.gameOver && state.isBoardFull() ) {
+					state.gameOver = true;
+				}
 			}
 
 			// render
@@ -85,7 +89,7 @@ public class Main
 			// sleep some time
 			try
 			{
-				Thread.sleep( 16 );
+				Thread.sleep( 14 );
 			}
 			catch(InterruptedException e)
 			{
@@ -94,7 +98,7 @@ public class Main
 		}
 	}
 
-	private boolean processInput(GameState state)
+	private boolean processInput(BoardState state)
 	{
 		boolean validMove = false;
 
@@ -131,28 +135,34 @@ public class Main
 		return validMove;
 	}
 
-	private void restartGame(GameState state)
+	private void restartGame(BoardState state)
 	{
 		keyListener.clearInput();
 		state.reset();
 
-		//		state.setTile( 0 , 3 ,1 );
+		state.setTileValue( 1 , 1 ,1 );
+		state.setTileValue( 1 , 3 ,1 );
+		
 		//		state.setTile( 1 , 3 ,1 );
 		//		state.setTile( 2 , 3 ,1 );
 		//		state.setTile( 3 , 3 ,1 );
-		setRandomTile(state);
+		// setRandomTile(state);
 	}
-
-	private void setRandomTile(GameState state)
+	
+	private void setRandomTile(BoardState state)
 	{
+		if ( 1 != 2 ) {
+			System.out.println("*** Setting rnd tile commented out ***");
+			return;
+		}
 		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
 		if ( state.isBoardFull() ) {
 			throw new IllegalStateException("Board is full?");
 		}
 		int x,y;
 		do { // TODO: This approach is quite wasteful when there are a lot of tiles on the board
-			x = rnd.nextInt( GameState.GRID_COLS );
-			y = rnd.nextInt( GameState.GRID_ROWS );
+			x = rnd.nextInt( BoardState.GRID_COLS );
+			y = rnd.nextInt( BoardState.GRID_ROWS );
 		}
 		while ( state.isOccupied(x,y) );
 		state.setTileValue(x,y,value);

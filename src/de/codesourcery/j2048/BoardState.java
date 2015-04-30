@@ -1,6 +1,6 @@
 package de.codesourcery.j2048;
 
-public final class GameState
+public final class BoardState
 {
 	// grid size
 	public static final int GRID_COLS = 4;
@@ -14,9 +14,9 @@ public final class GameState
 	public int score;
 	public boolean gameOver;
 
-	public GameState(TickListenerContainer container)
+	public BoardState(ScreenState screenState)
 	{
-		screenState = new ScreenState(container);
+		this.screenState = screenState;
 		reset();
 	}
 
@@ -67,7 +67,7 @@ public final class GameState
 	private void clearTile(int x,int y)
 	{
 		internalClearTile(x,y);
-		screenState.setTileValue( x, y , GameState.EMPTY_TILE );
+		screenState.clear( x, y );
 	}
 
 	private void internalClearTile(int x,int y)
@@ -91,9 +91,9 @@ public final class GameState
 		final boolean[] moved = {false};
 		final Runnable run = () ->
 		{
-			for ( int y = 0 ; y < GameState.GRID_ROWS ; y++ )
+			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
 			{
-				for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
+				for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 				{
 					if ( isOccupied(x,y) )
 					{
@@ -106,12 +106,12 @@ public final class GameState
 		run.run();
 		// merge left
 		boolean merged = false;
-		for ( int y = 0 ; y < GameState.GRID_ROWS ; y++ )
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
 		{
-			for ( int x = 1 ; x < GameState.GRID_COLS ; x++ )
+			for ( int x = 1 ; x < BoardState.GRID_COLS ; x++ )
 			{
 				final int tile = getTile(x,y);
-				if ( tile != GameState.EMPTY_TILE )
+				if ( tile != BoardState.EMPTY_TILE )
 				{
 					final int neightbourTile = getTile( x-1 , y );
 					if ( neightbourTile == tile )
@@ -136,9 +136,9 @@ public final class GameState
 
 		final Runnable run = () ->
 		{
-			for ( int y = 0 ; y < GameState.GRID_ROWS ; y++ )
+			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
 			{
-				for ( int x = GameState.GRID_COLS -2 ; x >= 0 ; x-- )
+				for ( int x = BoardState.GRID_COLS -2 ; x >= 0 ; x-- )
 				{
 					if ( isOccupied(x,y) )
 					{
@@ -151,12 +151,12 @@ public final class GameState
 
 		// merge right
 		boolean merged = false;
-		for ( int y = 0 ; y < GameState.GRID_ROWS ; y++ )
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
 		{
-			for ( int x = GameState.GRID_COLS -2 ; x >= 0 ; x-- )
+			for ( int x = BoardState.GRID_COLS -2 ; x >= 0 ; x-- )
 			{
 				final int tile = getTile(x,y);
-				if ( tile != GameState.EMPTY_TILE ) {
+				if ( tile != BoardState.EMPTY_TILE ) {
 					final int neightbourTile = getTile( x+1 , y );
 					if ( neightbourTile == tile )
 					{
@@ -178,9 +178,9 @@ public final class GameState
 	{
 		final boolean[] moved={false};
 		final Runnable run = () -> {
-			for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 			{
-				for ( int y = 1 ; y < GameState.GRID_ROWS ; y++ )
+				for ( int y = 1 ; y < BoardState.GRID_ROWS ; y++ )
 				{
 					if ( isOccupied(x,y) )
 					{
@@ -192,12 +192,12 @@ public final class GameState
 		run.run();
 		// merge downwards
 		boolean merged = false;
-		for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
+		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 		{
-			for ( int y = 1 ; y < GameState.GRID_ROWS ; y++ )
+			for ( int y = 1 ; y < BoardState.GRID_ROWS ; y++ )
 			{
 				final int tile = getTile(x,y);
-				if ( tile != GameState.EMPTY_TILE ) {
+				if ( tile != BoardState.EMPTY_TILE ) {
 					final int neightbourTile = getTile( x , y - 1 );
 					if ( neightbourTile == tile )
 					{
@@ -217,12 +217,12 @@ public final class GameState
 
 	public boolean tiltUp()
 	{
-		// move up
+		// move tiles up
 		final boolean[] moved = {false};
 		final Runnable run = () -> {
-			for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 			{
-				for ( int y = GameState.GRID_ROWS-2 ; y >= 0 ; y-- )
+				for ( int y = BoardState.GRID_ROWS-2 ; y >= 0 ; y-- )
 				{
 					if ( isOccupied(x,y) )
 					{
@@ -233,13 +233,14 @@ public final class GameState
 		};
 		run.run();
 
+		// merge adjacent tiles
 		boolean merged = false;
-		for ( int x = 0 ; x < GameState.GRID_COLS ; x++ )
+		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 		{
-			for ( int y = GameState.GRID_ROWS-2 ; y >= 0  ; y-- )
+			for ( int y = BoardState.GRID_ROWS-2 ; y >= 0  ; y-- )
 			{
 				final int tile = getTile(x,y);
-				if ( tile != GameState.EMPTY_TILE ) {
+				if ( tile != BoardState.EMPTY_TILE ) {
 					final int neightbourTile = getTile( x , y + 1 );
 					if ( neightbourTile == tile )
 					{
@@ -251,6 +252,7 @@ public final class GameState
 				}
 			}
 		}
+		// try to move remaining tiles to fill gaps
 		if ( merged ) {
 			run.run();
 		}
@@ -260,13 +262,18 @@ public final class GameState
 	private boolean moveTileDown(int x,int y)
 	{
 		boolean moved = false;
+		final int initialX = x;
+		final int initialY = y;
 		while ( y > 0 && isEmpty(x, y-1 ) )
 		{
-			setTileValue( x,y-1, getTile(x, y) );
-			clearTile(x,y);
+			internalSetTileValue( x,y-1, getTile(x, y) );
+			internalClearTile(x,y);
 			y--;
 			moved=true;
 		}
+		if ( moved ) {
+			screenState.moveTile(initialX,initialY,x,y);
+		}		
 		return moved;
 	}
 
@@ -275,7 +282,7 @@ public final class GameState
 		boolean moved = false;
 		final int initialX = x;
 		final int initialY = y;
-		while ( y < GameState.GRID_ROWS-1 && isEmpty(x, y+1 ) )
+		while ( y < BoardState.GRID_ROWS-1 && isEmpty(x, y+1 ) )
 		{
 			moved = true;
 			internalSetTileValue( x,y+1, getTile(x, y) );
@@ -284,7 +291,7 @@ public final class GameState
 			moved=true;
 		}
 		if ( moved ) {
-			screenState.moveTile(initialX,initialY,x,y-1);
+			screenState.moveTile(initialX,initialY,x,y);
 		}
 		return moved;
 	}
@@ -292,25 +299,35 @@ public final class GameState
 	private boolean moveTileLeft(int x,int y)
 	{
 		boolean moved = false;
+		final int initialX = x;
+		final int initialY = y;
 		while ( x > 0 && isEmpty(x-1, y ) )
 		{
-			setTileValue( x-1,y, getTile(x, y) );
-			clearTile(x,y);
+			internalSetTileValue( x-1,y, getTile(x, y) );
+			internalClearTile(x,y);
 			x--;
 			moved=true;
 		}
+		if ( moved ) {
+			screenState.moveTile(initialX,initialY,x,y);
+		}		
 		return moved;
 	}
 
 	private boolean moveTileRight(int x,int y)
 	{
 		boolean moved = false;
-		while ( x < GameState.GRID_COLS-1 && isEmpty(x+1, y ) )
+		final int initialX = x;
+		final int initialY = y;
+		while ( x < BoardState.GRID_COLS-1 && isEmpty(x+1, y ) )
 		{
-			setTileValue( x+1,y, getTile(x, y) );
-			clearTile(x,y);
+			internalSetTileValue( x+1,y, getTile(x, y) );
+			internalClearTile(x,y);
 			x++;
 			moved=true;
+		}
+		if ( moved ) {
+			screenState.moveTile(initialX,initialY,x,y);
 		}
 		return moved;
 	}

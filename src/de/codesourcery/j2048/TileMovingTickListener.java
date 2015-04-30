@@ -11,21 +11,35 @@ public class TileMovingTickListener implements ITickListener
 	private final int destX;
 	private final int destY;
 
+	private final float deltaX;
+	private final float deltaY;
+	
 	private float currentX;
 	private float currentY;
 
-	private final float deltaX;
-	private final float deltaY;
-
-	public TileMovingTickListener(Tile t,int destX,int destY)
+	public TileMovingTickListener(Tile t,int destTileX,int destTileY)
 	{
 		this.tile = t;
 		this.currentX = t.x;
 		this.currentY = t.y;
-		this.destX = destX;
-		this.destY = destY;
-		this.deltaX = (destX - currentX) / 60;
-		this.deltaY = (destY - currentY) / 60;
+		
+		final int xBorderOffset = destTileX * GameScreen.BORDER_THICKNESS;
+		final int yBorderOffset = destTileY * GameScreen.BORDER_THICKNESS;
+		
+		this.destX = GameScreen.BORDER_THICKNESS + destTileX * ScreenState.TILE_WIDTH  + xBorderOffset;
+		this.destY = GameScreen.BORDER_THICKNESS + destTileY * ScreenState.TILE_HEIGHT + yBorderOffset;
+
+		if ( t.tileX != destTileX ) {
+			this.deltaX = (destX - currentX) / 6.0f;
+		} else {
+			this.deltaX = 0;
+		}
+		if ( t.tileY != destTileY ) {
+			this.deltaY = (destY - currentY ) / 6.0f;
+		} else {
+			this.deltaY = 0;
+		}
+		System.out.println("Moving tile from ("+this.currentX+","+this.currentY+") -> ("+this.destX+","+this.destY+") , dx="+deltaX+", dy="+deltaY);		
 	}
 
 	@Override
@@ -34,9 +48,14 @@ public class TileMovingTickListener implements ITickListener
 		this.currentX += deltaX;
 		this.currentY += deltaY;
 
-		tile.x = (int) currentX;
-		tile.y = (int) currentY;
-		if ( tile.x == destX && tile.y == destY ) {
+		tile.x = (int) this.currentX;
+		tile.y = (int) this.currentY;
+		final boolean deltaXOk = deltaX == 0 || (deltaX > 0 && this.currentX >= destX ) || (deltaX < 0 && this.currentX <= destX );
+		final boolean deltaYOk = deltaY == 0 || (deltaY > 0 && this.currentY >= destY ) || (deltaY < 0 && this.currentY <= destY );		
+		if ( deltaXOk && deltaYOk )
+		{
+			tile.x = destX;
+			tile.y = destY;
 			return false;
 		}
 		return true;
