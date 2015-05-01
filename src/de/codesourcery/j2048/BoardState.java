@@ -135,7 +135,6 @@ public final class BoardState
 		if ( merged ) {
 			run.run();
 		}
-		
 		batch.close();
 		return moved[0] | merged;
 	}
@@ -145,7 +144,6 @@ public final class BoardState
 		final Batch batch = screenState.startBatch();
 		
 		final boolean[] moved = { false} ;
-
 		final Runnable run = () ->
 		{
 			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )

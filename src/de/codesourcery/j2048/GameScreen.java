@@ -12,10 +12,15 @@ import javax.swing.JPanel;
 
 public final class GameScreen extends JPanel
 {
-	private Font numberFont;
-	private Font textFont;
-	private Font gameOverFont;
+	protected static final Color COLOR_GAMEOVER = Color.RED;
+	protected static final Color COLOR_SCORE = Color.BLACK;
+	
+	protected static final Color COLOR_BACKGROUND = fromHex("#FFC82A");
+	protected static final Color COLOR_GRID = fromHex("#FF742A");
 
+	protected static final Color COLOR_TILE_BACKGROUND = fromHex("#3391E6");
+	protected static final Color COLOR_TILE_FOREGROUND = fromHex("#FF742A");
+	
 	public static final int BORDER_THICKNESS = 1;
 
 	public static final int BOARD_Y_OFFSET = 40;
@@ -23,6 +28,11 @@ public final class GameScreen extends JPanel
 	public static final int WIDTH  = BoardState.GRID_COLS * ScreenState.TILE_WIDTH  + (BoardState.GRID_COLS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
 	public static final int HEIGHT = BOARD_Y_OFFSET + BoardState.GRID_ROWS * ScreenState.TILE_HEIGHT + (BoardState.GRID_ROWS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
 
+	protected Font numberFont;
+	protected Font textFont;
+	protected Font gameOverFont;
+	
+	// off-screen buffers
 	private final Object BUFFER_LOCK = new Object();
 
 	// @GuardedBy( BUFFER_LOCK )
@@ -33,8 +43,16 @@ public final class GameScreen extends JPanel
 	private int bufferIndex;
 
 	public GameScreen() {
-		setBackground(Color.WHITE);
+		setBackground(COLOR_BACKGROUND);
 	}
+	
+	private static final Color fromHex(String s) {
+		if ( s.startsWith("#" ) ) {
+			s = s.substring(1);
+		}
+		int value = Integer.parseInt( s , 16 );
+		return new Color((value >> 16) & 0xff , (value>>8) & 0xff, value & 0xff );
+	}	
 
 	private Graphics2D getBackBufferGfx()
 	{
@@ -136,18 +154,18 @@ public final class GameScreen extends JPanel
 		if ( numberFont == null ) {
 			numberFont = getFont().deriveFont( Font.BOLD , 24  );
 			textFont = getFont().deriveFont( Font.BOLD , 32  );
-			gameOverFont = getFont().deriveFont( Font.BOLD , 64  );
+			gameOverFont = getFont().deriveFont( Font.BOLD , 32  );
 		}
 
 		// clear screen
-		gfx.setColor( Color.WHITE );
+		gfx.setColor( COLOR_BACKGROUND );
 		gfx.fillRect( 0 , 0 , WIDTH , HEIGHT );
 
 		// draw grid lines
 		final int boardWidth = WIDTH;
 		final int boardHeight = HEIGHT - BOARD_Y_OFFSET-1;
 
-		gfx.setColor(Color.RED);
+		gfx.setColor(COLOR_GRID);
 		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= BoardState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+1 )
 		{
 			gfx.drawLine( 0, y , boardWidth , y );
@@ -163,20 +181,20 @@ public final class GameScreen extends JPanel
 		{
 			final int value = 1 << tile.value;
 			final Rectangle r = new Rectangle( tile.x , BOARD_Y_OFFSET + tile.y , ScreenState.TILE_WIDTH , ScreenState.TILE_HEIGHT );
-			gfx.setColor(Color.BLACK);
+			gfx.setColor( COLOR_TILE_BACKGROUND);
 			gfx.fillRect( r.x , r.y , r.width, r.height );
-			gfx.setColor(Color.WHITE);
+			gfx.setColor(COLOR_TILE_FOREGROUND);
 			renderCenteredText( Integer.toString( value ) , r , gfx );
 		});
 
 		// render score
-		gfx.setColor(Color.BLACK);
+		gfx.setColor(COLOR_SCORE);
 		gfx.setFont( textFont );
-		gfx.drawString( "Score: "+state.score,5,25);
+		gfx.drawString( "Score: "+state.score,5,30);
 
 		// render game over screen
 		if ( state.gameOver ) {
-			gfx.setColor(Color.RED);
+			gfx.setColor(COLOR_GAMEOVER);
 			gfx.setFont( gameOverFont );
 			renderCenteredText( "GAME OVER !!!", new Rectangle(0,0,WIDTH,HEIGHT ), gfx );
 		}

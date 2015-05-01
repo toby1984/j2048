@@ -18,6 +18,7 @@ public class Main
 		@Override public void keyPressed(KeyEvent e) { pressed.add( e.getKeyCode() ); }
 		public boolean isPressed(int keyCode) { return pressed.contains(keyCode); }
 		public void clearInput() { pressed.clear(); }
+		public boolean anyInput() { return ! pressed.isEmpty(); }
 	};
 
 	private final TickListenerContainer tickListeners = new TickListenerContainer();
@@ -66,7 +67,7 @@ public class Main
 			tickListeners.invokeTickListeners( deltaSeconds );
 
 			// process input and advance game state
-			if ( screenState.isInSyncWithBoardState() )  // only process input once screen state is in sync with board state
+			if ( screenState.isInSyncWithBoardState() && keyListener.anyInput() )  // only process input once screen state is in sync with board state
 			{
 				final boolean validMove = processInput( state );
 				if ( validMove )
@@ -108,14 +109,12 @@ public class Main
 		else if ( keyListener.isPressed( KeyEvent.VK_A ) || keyListener.isPressed( KeyEvent.VK_LEFT ) )
 		{
 			if ( ! state.gameOver ) {
-				System.out.println("left");
 				validMove = state.tiltLeft();
 			}
 		}
 		else if ( keyListener.isPressed( KeyEvent.VK_D ) || keyListener.isPressed( KeyEvent.VK_RIGHT ) )
 		{
 			if ( ! state.gameOver ) {
-				System.out.println("right");
 				validMove = state.tiltRight();
 			}
 		}
@@ -140,25 +139,17 @@ public class Main
 		keyListener.clearInput();
 		state.reset();
 
-		state.setTileValue( 1 , 3 ,1 );
-		state.setTileValue( 2 , 3 ,1 );
-		state.setTileValue( 3 , 3 ,1 );
-		
 		setRandomTile(state);
 	}
 
 	private void setRandomTile(BoardState state)
 	{
-		if ( 1 != 2 ) {
-			System.out.println("*** Setting rnd tile commented out ***");
-			return;
-		}
 		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
 		if ( state.isBoardFull() ) {
 			throw new IllegalStateException("Board is full?");
 		}
 		int x,y;
-		do { // TODO: This approach is quite wasteful when there are a lot of tiles on the board
+		do {
 			x = rnd.nextInt( BoardState.GRID_COLS );
 			y = rnd.nextInt( BoardState.GRID_ROWS );
 		}

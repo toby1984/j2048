@@ -4,7 +4,7 @@ import de.codesourcery.j2048.ScreenState.Tile;
 import de.codesourcery.j2048.TickListenerContainer.ITickContext;
 import de.codesourcery.j2048.TickListenerContainer.ITickListener;
 
-public class TileMovingTickListener implements ITickListener
+public final class TileMovingTickListener implements ITickListener
 {
 	private final Tile tile;
 
@@ -29,13 +29,14 @@ public class TileMovingTickListener implements ITickListener
 		this.destX = GameScreen.BORDER_THICKNESS + destTileX * ScreenState.TILE_WIDTH  + xBorderOffset;
 		this.destY = GameScreen.BORDER_THICKNESS + destTileY * ScreenState.TILE_HEIGHT + yBorderOffset;
 
+		final float speed = 20;
 		if ( t.tileX != destTileX ) {
-			this.deltaX = destTileX > t.tileX ? 1f : -1f; // (destX - currentX) / 12.0f;
+			this.deltaX = destTileX > t.tileX ? speed : -speed; // (destX - currentX) / 12.0f;
 		} else {
 			this.deltaX = 0;
 		}
 		if ( t.tileY != destTileY ) {
-			this.deltaY = destTileY > t.tileY ? 1f : -1f; // (destY - currentY ) / 12.0f;
+			this.deltaY = destTileY > t.tileY ? speed : -speed; // (destY - currentY ) / 12.0f;
 		} else {
 			this.deltaY = 0;
 		}

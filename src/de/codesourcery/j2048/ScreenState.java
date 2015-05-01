@@ -63,7 +63,6 @@ public class ScreenState implements ITickListener
 	private Batch currentBatch() 
 	{
 		if ( currentBatch == null ) {
-			new Exception("=== auto-commit batch ===").printStackTrace();
 			currentBatch = new Batch(true);
 		}
 		return currentBatch;
@@ -88,29 +87,26 @@ public class ScreenState implements ITickListener
 				updateScreenLocation( tileX , tileY );
 			}
 			
-			public boolean hasPendingChanges() {
+			protected boolean hasPendingChanges() {
 				return ! delegates.isEmpty();
 			}
 
 			public void moveTo(int dstX,int dstY)
 			{
-				currentBatch().add( () -> 
+				queue( new TileMovingTickListener( this , dstX , dstY ) );
+				queue( ctx -> 
 				{
-					queue( new TileMovingTickListener( this , dstX , dstY ) );
-					queue( ctx -> 
-					{
-						this.tileX = dstX;
-						this.tileY = dstY;					
-						return false;
-					} );
-				});
+					this.tileX = dstX;
+					this.tileY = dstY;					
+					return false;
+				} );
 			}
 			
 			public boolean isOccupied() {
 				return value != BoardState.EMPTY_TILE;
 			}
 
-			public void updateScreenLocation(int tileX,int tileY)
+			private void updateScreenLocation(int tileX,int tileY)
 			{
 				final int xBorderOffset = tileX*GameScreen.BORDER_THICKNESS;
 				final int yBorderOffset = tileY*GameScreen.BORDER_THICKNESS;
@@ -174,7 +170,7 @@ public class ScreenState implements ITickListener
 
 	public void clear(int tileX,int tileY)
 	{
-		currentBatch().add( () -> getTile(tileX,tileY,true).setValue( BoardState.EMPTY_TILE ) );
+		currentBatch().add( () -> getTile(tileX,tileY,true).destroy() );
 	}
 
 	private Tile getTile(int x,int y)
@@ -199,7 +195,6 @@ public class ScreenState implements ITickListener
 
 	public void setTileValue(int tileX,int tileY,int tileValue)
 	{
-		System.out.println("setTileValue("+tileX+","+tileY+") = "+tileValue);
 		currentBatch().add( () -> 
 		{
 			Tile t = getTile(tileX,tileY,false);
@@ -225,7 +220,6 @@ public class ScreenState implements ITickListener
 
 	public void moveTile(int srcX,int srcY,int dstX,int dstY)
 	{
-		System.out.println("moveTile(): ("+srcX+","+srcY+") -> ("+dstX+","+dstY+")");
 		currentBatch().add( () -> getTile(srcX,srcY).moveTo( dstX , dstY ) );
 	}
 

@@ -61,7 +61,6 @@ public final class TickListenerContainer
 		final MyTickCtx ctx = new MyTickCtx(deltaSeconds);
 		synchronized( tickListeners )
 		{
-
 			for (Iterator<ITickListener> it = tickListeners.iterator(); it.hasNext();)
 			{
 				final ITickListener l = it.next();
