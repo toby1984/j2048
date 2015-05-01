@@ -13,8 +13,8 @@ public final class BoardState
 	public final ScreenState screenState;
 
 	public final int[] grid=new int[ GRID_COLS * GRID_ROWS ];
-	public int score;
-	public boolean gameOver;
+	private int score;
+	private boolean gameOver;
 
 	public BoardState(ScreenState screenState)
 	{
@@ -342,6 +342,47 @@ public final class BoardState
 		}		
 		return moved;
 	}
+	
+	public boolean isGameOver() 
+	{
+		if ( gameOver ) {
+			return true;
+		}
+		if ( ! isBoardFull() ) {
+			return false;
+		}
+		
+		// board is full, check whether any two tiles can be merged
+		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
+		{
+			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ ) 
+			{
+				final int tile = getTile(x, y);
+				if ( x-1 >= 0 ) { // check left neighbor
+					if ( getTile(x-1,y) == tile ) {
+						return false;
+					}
+				}
+				if ( x+1 < BoardState.GRID_COLS ) { // check right neighbor
+					if ( getTile(x+1,y) == tile ) {
+						return false;
+					}
+				}
+				if ( y-1 >= 0 ) { // check top neighbor
+					if ( getTile(x,y-1) == tile ) {
+						return false;
+					}
+				}		
+				if ( y+1 < BoardState.GRID_ROWS ) { // check bottom neighbor
+					if ( getTile(x,y+1) == tile ) {
+						return false;
+					}
+				}					
+			}
+		}
+		gameOver = true;
+		return true;
+	}
 
 	private boolean moveTileRight(int x,int y)
 	{
@@ -359,5 +400,9 @@ public final class BoardState
 			screenState.moveTile(initialX,initialY,x,y);
 		}
 		return moved;
+	}
+	
+	public int getScore() {
+		return score;
 	}
 }

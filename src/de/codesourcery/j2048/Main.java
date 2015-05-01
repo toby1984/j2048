@@ -1,50 +1,42 @@
 package de.codesourcery.j2048;
 
 import java.awt.Dimension;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
 
 import javax.swing.JFrame;
 
+import de.codesourcery.j2048.IInputProvider.Action;
+
 public class Main
 {
-	protected static final class MyKeyListener extends KeyAdapter
-	{
-		public final Set<Integer> pressed = new HashSet<>();
-		@Override public void keyReleased(KeyEvent e) { pressed.remove( e.getKeyCode() ); }
-		@Override public void keyPressed(KeyEvent e) { pressed.add( e.getKeyCode() ); }
-		public boolean isPressed(int keyCode) { return pressed.contains(keyCode); }
-		public void clearInput() { pressed.clear(); }
-		public boolean anyInput() { return ! pressed.isEmpty(); }
-	};
-
 	private final TickListenerContainer tickListeners = new TickListenerContainer();
 	private final Random rnd = new Random(System.currentTimeMillis());
-	private final MyKeyListener keyListener = new MyKeyListener();
+	private final IInputProvider inputProvider;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) 
+	{
+		new Main(new KeyboardInputProvider() ).run();
+	}
 
-		new Main().run();
+	public Main(IInputProvider keyListener) {
+		this.inputProvider = keyListener;
 	}
 
 	public void run()
 	{
 		final ScreenState screenState = new ScreenState( tickListeners );
 		final BoardState state = new BoardState( screenState );
+		
 		restartGame(state);
 
-		final GameScreen panel = new GameScreen();
-
 		final JFrame frame = new JFrame("test");
-		frame.addKeyListener( keyListener );
+		inputProvider.attach( frame );
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		final GameScreen panel = new GameScreen();
 		panel.setFocusable(true);
 		panel.setRequestFocusEnabled( true );
-		panel.addKeyListener( keyListener );
+		inputProvider.attach(panel);
 		panel.setPreferredSize( new Dimension(640,480));
 		panel.setMinimumSize( new Dimension(200,200));
 		frame.getContentPane().add( panel );
@@ -57,7 +49,6 @@ public class Main
 
 	private void mainLoop(final BoardState state, final ScreenState screenState, final GameScreen panel)
 	{
-		// main loop
 		long time = System.currentTimeMillis();
 		while ( true )
 		{
@@ -67,20 +58,13 @@ public class Main
 			tickListeners.invokeTickListeners( deltaSeconds );
 
 			// process input and advance game state
-			if ( screenState.isInSyncWithBoardState() && keyListener.anyInput() )  // only process input once screen state is in sync with board state
+			final IInputProvider.Action action = inputProvider.getAction( state );
+			if ( screenState.isInSyncWithBoardState() && action != IInputProvider.Action.NONE ) // only process input once screen state is in sync with board state
 			{
-				final boolean validMove = processInput( state );
-				if ( validMove )
+				final boolean validMove = processInput( state , action );
+				if ( validMove && ! state.isGameOver() )
 				{
-					if ( state.isBoardFull() )
-					{
-						state.gameOver = true;
-					} else {
-						setRandomTile(state);
-					}
-				}
-				else if ( ! state.gameOver && state.isBoardFull() ) {
-					state.gameOver = true;
+					placeRandomTile(state);
 				}
 			}
 
@@ -99,55 +83,46 @@ public class Main
 		}
 	}
 
-	private boolean processInput(BoardState state)
+	private boolean processInput(BoardState board,IInputProvider.Action action)
 	{
-		boolean validMove = false;
-
-		if ( keyListener.isPressed( KeyEvent.VK_ENTER ) ) {
-			restartGame(state);
-		}
-		else if ( keyListener.isPressed( KeyEvent.VK_A ) || keyListener.isPressed( KeyEvent.VK_LEFT ) )
+		if (action == Action.RESTART) 
 		{
-			if ( ! state.gameOver ) {
-				validMove = state.tiltLeft();
-			}
+			restartGame(board);
+			return false;
 		}
-		else if ( keyListener.isPressed( KeyEvent.VK_D ) || keyListener.isPressed( KeyEvent.VK_RIGHT ) )
-		{
-			if ( ! state.gameOver ) {
-				validMove = state.tiltRight();
-			}
+		if ( board.isGameOver() || action == Action.NONE) {
+			return false;
 		}
-		else if ( keyListener.isPressed( KeyEvent.VK_W ) || keyListener.isPressed( KeyEvent.VK_UP ) )
-		{
-			if ( ! state.gameOver ) {
-				validMove = state.tiltDown();
-			}
+		
+		if (action == Action.TILT_DOWN) {
+			return board.tiltDown();
+		} 
+		if (action == Action.TILT_LEFT) {
+			return board.tiltLeft();
+		} 
+		if (action == Action.TILT_RIGHT) {
+			return board.tiltRight(); 
+		} 
+		if (action == Action.TILT_UP) {
+			return board.tiltUp();
 		}
-		else if ( keyListener.isPressed( KeyEvent.VK_S ) || keyListener.isPressed( KeyEvent.VK_DOWN ) )
-		{
-			if ( ! state.gameOver ) {
-				validMove = state.tiltUp();
-			}
-		}
-		keyListener.clearInput();
-		return validMove;
+		return false;
 	}
 
 	private void restartGame(BoardState state)
 	{
-		keyListener.clearInput();
 		state.reset();
-
-		setRandomTile(state);
+		placeRandomTile(state);
 	}
 
-	private void setRandomTile(BoardState state)
+	private void placeRandomTile(BoardState state)
 	{
-		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
 		if ( state.isBoardFull() ) {
-			throw new IllegalStateException("Board is full?");
+			return;
 		}
+		
+		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
+
 		int x,y;
 		do {
 			x = rnd.nextInt( BoardState.GRID_COLS );

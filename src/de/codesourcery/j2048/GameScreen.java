@@ -5,14 +5,15 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.font.LineMetrics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+
 import javax.swing.JPanel;
 
 public final class GameScreen extends JPanel
 {
-	protected static final Color COLOR_GAMEOVER = Color.RED;
 	protected static final Color COLOR_SCORE = Color.BLACK;
 	
 	protected static final Color COLOR_BACKGROUND = fromHex("#FFC82A");
@@ -20,6 +21,8 @@ public final class GameScreen extends JPanel
 
 	protected static final Color COLOR_TILE_BACKGROUND = fromHex("#3391E6");
 	protected static final Color COLOR_TILE_FOREGROUND = fromHex("#FF742A");
+	
+	protected static final Color COLOR_GAMEOVER = COLOR_BACKGROUND;
 	
 	public static final int BORDER_THICKNESS = 1;
 
@@ -129,6 +132,7 @@ public final class GameScreen extends JPanel
 		synchronized(BUFFER_LOCK)
 		{
 			g.drawImage( getFrontBuffer() , 0 , 0 , null );
+			Toolkit.getDefaultToolkit().sync();			
 			BUFFER_LOCK.notifyAll();
 		}
 	}
@@ -190,10 +194,10 @@ public final class GameScreen extends JPanel
 		// render score
 		gfx.setColor(COLOR_SCORE);
 		gfx.setFont( textFont );
-		gfx.drawString( "Score: "+state.score,5,30);
+		gfx.drawString( "Score: "+state.getScore(),5,30);
 
 		// render game over screen
-		if ( state.gameOver ) {
+		if ( state.isGameOver() ) {
 			gfx.setColor(COLOR_GAMEOVER);
 			gfx.setFont( gameOverFont );
 			renderCenteredText( "GAME OVER !!!", new Rectangle(0,0,WIDTH,HEIGHT ), gfx );
