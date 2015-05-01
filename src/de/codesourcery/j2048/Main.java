@@ -15,7 +15,8 @@ public class Main
 
 	public static void main(String[] args) 
 	{
-		new Main(new KeyboardInputProvider() ).run();
+//		new Main(new KeyboardInputProvider() ).run();
+		new Main(new AIPlayer() ).run();
 	}
 
 	public Main(IInputProvider keyListener) {
@@ -59,12 +60,19 @@ public class Main
 
 			// process input and advance game state
 			final IInputProvider.Action action = inputProvider.getAction( state );
-			if ( screenState.isInSyncWithBoardState() && action != IInputProvider.Action.NONE ) // only process input once screen state is in sync with board state
+			if ( action != IInputProvider.Action.NONE && screenState.isInSyncWithBoardState() ) // only process input once screen state is in sync with board state
 			{
-				final boolean validMove = processInput( state , action );
-				if ( validMove && ! state.isGameOver() )
+				if (action == Action.RESTART) 
 				{
-					placeRandomTile(state);
+					restartGame(state);
+				} 
+				else if ( ! state.isGameOver() )
+				{
+					final boolean validMove = processInput( state , action );
+					if ( validMove && ! state.isGameOver() )
+					{
+						state.placeRandomTile(rnd);
+					}
 				}
 			}
 
@@ -85,12 +93,7 @@ public class Main
 
 	private boolean processInput(BoardState board,IInputProvider.Action action)
 	{
-		if (action == Action.RESTART) 
-		{
-			restartGame(board);
-			return false;
-		}
-		if ( board.isGameOver() || action == Action.NONE) {
+		if ( board.isGameOver() ) {
 			return false;
 		}
 		
@@ -112,23 +115,6 @@ public class Main
 	private void restartGame(BoardState state)
 	{
 		state.reset();
-		placeRandomTile(state);
-	}
-
-	private void placeRandomTile(BoardState state)
-	{
-		if ( state.isBoardFull() ) {
-			return;
-		}
-		
-		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
-
-		int x,y;
-		do {
-			x = rnd.nextInt( BoardState.GRID_COLS );
-			y = rnd.nextInt( BoardState.GRID_ROWS );
-		}
-		while ( state.isOccupied(x,y) );
-		state.setTileValue(x,y,value);
+		state.placeRandomTile( rnd );
 	}
 }

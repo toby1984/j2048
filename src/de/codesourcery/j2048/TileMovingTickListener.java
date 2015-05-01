@@ -8,6 +8,8 @@ public final class TileMovingTickListener implements ITickListener
 {
 	private static final float MOVEMENT_SPEED = 20;
 	
+	public static final boolean MOVE_INSTANTLY = true;
+	
 	private final Tile tile;
 
 	private final int destX;
@@ -53,7 +55,7 @@ public final class TileMovingTickListener implements ITickListener
 		tile.y = (int) this.currentY;
 		final boolean deltaXOk = deltaX == 0 || (deltaX > 0 && this.currentX >= destX ) || (deltaX < 0 && this.currentX <= destX );
 		final boolean deltaYOk = deltaY == 0 || (deltaY > 0 && this.currentY >= destY ) || (deltaY < 0 && this.currentY <= destY );		
-		if ( deltaXOk && deltaYOk )
+		if ( MOVE_INSTANTLY || deltaXOk && deltaYOk )
 		{
 			tile.x = destX;
 			tile.y = destY;

@@ -1,5 +1,7 @@
 package de.codesourcery.j2048;
 
+import java.util.Random;
+
 
 
 public class BoardState
@@ -13,10 +15,10 @@ public class BoardState
 	public final int[] grid=new int[ GRID_COLS * GRID_ROWS ];
 	private int score;
 	private boolean gameOver;
-	
+
 	public BoardState() {
 	}
-	
+
 	public final BoardState createCopy() 
 	{
 		final BoardState copy = new BoardState();
@@ -25,6 +27,38 @@ public class BoardState
 		copy.gameOver = this.gameOver;
 		return copy;
 	}	
+	
+	public final int getTileCount() 
+	{
+		int count = 0;
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
+		{
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
+			{
+				if ( getTile(x, y) != BoardState.EMPTY_TILE ) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+	
+	public final void placeRandomTile(Random rnd) 
+	{
+		if ( isBoardFull() ) {
+			return;
+		}
+		
+		final int value = rnd.nextFloat() > 0.9 ? 2 : 1;
+
+		int x,y;
+		do {
+			x = rnd.nextInt( BoardState.GRID_COLS );
+			y = rnd.nextInt( BoardState.GRID_ROWS );
+		}
+		while ( isOccupied(x,y) );
+		setTileValue(x,y,value);
+	}
 
 	public final void reset()
 	{
@@ -38,7 +72,7 @@ public class BoardState
 			grid[ i ] = EMPTY_TILE;
 		}
 	}
-	
+
 	public final int getTile(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
 		return grid[ptr];
@@ -71,7 +105,7 @@ public class BoardState
 		internalClearTile(x,y);
 		clearScreenState(x,y);
 	}
-	
+
 	private void internalClearTile(int x,int y)
 	{
 		final int ptr = x+y*GRID_COLS;
@@ -87,11 +121,11 @@ public class BoardState
 		final int ptr = x+y*GRID_COLS;
 		return grid[ptr] == EMPTY_TILE;
 	}
-	
+
 	public final boolean tiltLeft() {
 
 		startBatch();
-		
+
 		final boolean[] moved = {false};
 		final Runnable run = () ->
 		{
@@ -109,7 +143,7 @@ public class BoardState
 
 		run.run();
 		sync();
-		
+
 		// merge left
 		boolean merged = false;
 		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
@@ -131,7 +165,7 @@ public class BoardState
 			}
 		}
 		sync();	
-		
+
 		if ( merged ) {
 			run.run();
 		}
@@ -142,7 +176,7 @@ public class BoardState
 	public final boolean tiltRight()
 	{
 		startBatch();
-		
+
 		final boolean[] moved = { false} ;
 		final Runnable run = () ->
 		{
@@ -180,7 +214,7 @@ public class BoardState
 			}
 		}
 		sync();
-		
+
 		if ( merged ) {
 			run.run();
 		}
@@ -207,7 +241,7 @@ public class BoardState
 		};
 		run.run();
 		sync();
-		
+
 		// merge downwards
 		boolean merged = false;
 		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
@@ -238,7 +272,7 @@ public class BoardState
 	public final boolean tiltUp()
 	{
 		startBatch();
-		
+
 		// move tiles up
 		final boolean[] moved = {false};
 		final Runnable run = () -> {
@@ -253,10 +287,10 @@ public class BoardState
 				}
 			}		
 		};
-		
+
 		run.run();
 		sync();			
-		
+
 		// merge adjacent tiles
 		boolean merged = false;
 		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
@@ -276,13 +310,13 @@ public class BoardState
 				}
 			}
 		}
-		
+
 		sync();
 		// try to move remaining tiles to fill gaps
 		if ( merged ) {
 			run.run();
 		}
-		
+
 		close();
 		return moved[0] | merged;
 	}
@@ -341,7 +375,7 @@ public class BoardState
 		}		
 		return moved;
 	}
-	
+
 	private boolean moveTileRight(int x,int y)
 	{
 		boolean moved = false;
@@ -359,7 +393,7 @@ public class BoardState
 		}
 		return moved;
 	}
-	
+
 	public final boolean isGameOver() 
 	{
 		if ( gameOver ) {
@@ -368,7 +402,7 @@ public class BoardState
 		if ( ! isBoardFull() ) {
 			return false;
 		}
-		
+
 		// board is full, check whether any two tiles can be merged
 		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
 		{
@@ -400,78 +434,31 @@ public class BoardState
 		gameOver = true;
 		return true;
 	}	
-	
-	public final int getPossibleActions() 
-	{
-		int result = 0;
-		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
-		{
-			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ ) 
-			{
-				final int tile = getTile(x, y);
-				if ( x-1 >= 0 ) { // check left neighbor
-					final int neighbor = getTile(x-1,y);
-					if ( neighbor == EMPTY_TILE ) {
-						result |= PossibleActions.MOVE_LEFT; 
-					} else if ( neighbor == tile ) {
-						result |= PossibleActions.MERGE_LEFT;
-					}
-				}
-				if ( x+1 < BoardState.GRID_COLS ) { // check right neighbor
-					final int neighbor = getTile(x+1,y);
-					if ( neighbor == EMPTY_TILE ) {
-						result |= PossibleActions.MOVE_RIGHT;
-					} 
-					else if ( neighbor == tile ) {
-						result |= PossibleActions.MERGE_RIGHT;
-					}
-				}
-				if ( y-1 >= 0 ) { // check top neighbor
-					final int neighbor = getTile(x,y-1);
-					if ( neighbor == EMPTY_TILE ) {
-						result |= PossibleActions.MOVE_DOWN;
-					} 
-					else if ( neighbor == tile ) {
-						result |= PossibleActions.MERGE_DOWN;
-					}
-				}		
-				if ( y+1 < BoardState.GRID_ROWS ) { // check bottom neighbor
-					final int neighbor = getTile(x,y+1);
-					if ( neighbor == EMPTY_TILE ) {
-						result |= PossibleActions.MOVE_UP;
-					} 
-					else if ( neighbor == tile ) {
-						result |= PossibleActions.MERGE_UP;
-					}
-				}					
-			}
-		}
-		return result;
-	}
-	
+
+
 	public final int getScore() {
 		return score;
 	}
-	
+
 	// overridable stuff
 	protected void resetScreenState() {
 	}	
-	
+
 	protected void moveTile(int initialX,int initialY,int x,int y) {
 	}
-	
+
 	protected void startBatch() {
 	}
-	
+
 	protected void sync() {
 	}	
-	
+
 	protected void close() {
 	}
-	
+
 	protected void clearScreenState(int x,int y) {
 	}
-	
+
 	protected void setScreenState(int x, int y, int value) {
 	}	
 }

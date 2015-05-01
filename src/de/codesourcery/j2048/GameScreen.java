@@ -16,14 +16,17 @@ public final class GameScreen extends JPanel
 {
 	protected static final Color COLOR_SCORE = Color.BLACK;
 	
-	protected static final Color COLOR_BACKGROUND = fromHex("#FFC82A");
-	protected static final Color COLOR_GRID = fromHex("#FF742A");
+	protected static final Color COLOR_BACKGROUND = Color.WHITE;
+	protected static final Color COLOR_GRID = Color.RED;
 
-	protected static final Color COLOR_TILE_BACKGROUND = fromHex("#3391E6");
-	protected static final Color COLOR_TILE_FOREGROUND = fromHex("#FF742A");
+	protected static final Color COLOR_TILE_BACKGROUND = Color.WHITE;
+	protected static final Color COLOR_TILE_FOREGROUND = Color.blue;
 	
-	protected static final Color COLOR_GAMEOVER = COLOR_BACKGROUND;
+	protected static final Color COLOR_GAMEOVER = Color.RED;
 	
+	// 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384
+	protected final Color[] colors = createGradient(Color.WHITE,Color.RED,15);
+			
 	public static final int BORDER_THICKNESS = 1;
 
 	public static final int BOARD_Y_OFFSET = 40;
@@ -47,6 +50,33 @@ public final class GameScreen extends JPanel
 
 	public GameScreen() {
 		setBackground(COLOR_BACKGROUND);
+	}
+	
+	private static Color[] createGradient(Color start,Color end,int steps) 
+	{
+		float r1 = start.getRed()/255f;
+		float r2 = end.getRed()/255f;
+		
+		float g1 = start.getGreen()/255f;
+		float g2 = end.getGreen()/255f;
+		
+		float b1 = start.getBlue()/255f;
+		float b2 = end.getBlue()/255f;
+		
+		float dr = (r2-r1) / steps;
+		float dg = (g2-g1) / steps;
+		float db = (b2-b1) / steps;
+		final Color[] gradient = new Color[steps];
+		float r = r1;
+		float g = g1;
+		float b = b1;
+		for ( int i = 0 ; i < steps ; i++ ) {
+			gradient[i]= new Color(r,g,b);
+			r += dr;
+			g += dg;
+			b += db;
+		}
+		return gradient;
 	}
 	
 	private static final Color fromHex(String s) {
@@ -185,7 +215,7 @@ public final class GameScreen extends JPanel
 		{
 			final int value = 1 << tile.value;
 			final Rectangle r = new Rectangle( tile.x , BOARD_Y_OFFSET + tile.y , ScreenState.TILE_WIDTH , ScreenState.TILE_HEIGHT );
-			gfx.setColor( COLOR_TILE_BACKGROUND);
+			gfx.setColor( colors[tile.value-1] );
 			gfx.fillRect( r.x , r.y , r.width, r.height );
 			gfx.setColor(COLOR_TILE_FOREGROUND);
 			renderCenteredText( Integer.toString( value ) , r , gfx );
