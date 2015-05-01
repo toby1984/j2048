@@ -43,6 +43,23 @@ public class BoardState
 		return count;
 	}
 	
+	public final int getHighestTileValue() 
+	{
+		int result = 0;
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
+		{
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
+			{
+				final int tile = getTile(x, y);
+				if ( tile != BoardState.EMPTY_TILE ) 
+				{
+					result = Math.max( result , 1<<tile );
+				}
+			}
+		}
+		return result;
+	}	
+	
 	public final void placeRandomTile(Random rnd) 
 	{
 		if ( isBoardFull() ) {

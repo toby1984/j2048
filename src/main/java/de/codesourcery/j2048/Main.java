@@ -12,11 +12,15 @@ public class Main
 	private final TickListenerContainer tickListeners = new TickListenerContainer();
 	private final Random rnd = new Random(System.currentTimeMillis());
 	private final IInputProvider inputProvider;
-
+	
 	public static void main(String[] args) 
 	{
-//		new Main(new KeyboardInputProvider() ).run();
-		new Main(new AIPlayer() ).run();
+		if ( args.length < 1 || ! args[0].equalsIgnoreCase("-ai" ) ) 
+		{
+			new Main(new KeyboardInputProvider() ).run();
+		} else {
+			new Main(new AIPlayer() ).run();
+		}
 	}
 
 	public Main(IInputProvider keyListener) {
@@ -59,19 +63,22 @@ public class Main
 			tickListeners.invokeTickListeners( deltaSeconds );
 
 			// process input and advance game state
-			final IInputProvider.Action action = inputProvider.getAction( state );
-			if ( action != IInputProvider.Action.NONE && screenState.isInSyncWithBoardState() ) // only process input once screen state is in sync with board state
+			if ( screenState.isInSyncWithBoardState() ) // only process input once screen state is in sync with board state
 			{
-				if (action == Action.RESTART) 
+				final IInputProvider.Action action = inputProvider.getAction( state );
+				if ( action != Action.NONE) 
 				{
-					restartGame(state);
-				} 
-				else if ( ! state.isGameOver() )
-				{
-					final boolean validMove = processInput( state , action );
-					if ( validMove && ! state.isGameOver() )
+					if (action == Action.RESTART) 
 					{
-						state.placeRandomTile(rnd);
+						restartGame(state);
+					} 
+					else if ( ! state.isGameOver() )
+					{
+						final boolean validMove = processInput( state , action );
+						if ( validMove && ! state.isGameOver() )
+						{
+							state.placeRandomTile(rnd);
+						}
 					}
 				}
 			}

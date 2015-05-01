@@ -1,10 +1,12 @@
 package de.codesourcery.j2048;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Stroke;
 import java.awt.Toolkit;
 import java.awt.font.LineMetrics;
 import java.awt.geom.Rectangle2D;
@@ -16,8 +18,8 @@ public final class GameScreen extends JPanel
 {
 	protected static final Color COLOR_SCORE = Color.BLACK;
 	
-	protected static final Color COLOR_BACKGROUND = Color.WHITE;
-	protected static final Color COLOR_GRID = Color.RED;
+	protected static final Color COLOR_BACKGROUND = Color.LIGHT_GRAY;
+	protected static final Color COLOR_GRID = Color.DARK_GRAY;
 
 	protected static final Color COLOR_TILE_BACKGROUND = Color.WHITE;
 	protected static final Color COLOR_TILE_FOREGROUND = Color.blue;
@@ -27,12 +29,14 @@ public final class GameScreen extends JPanel
 	// 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384
 	protected final Color[] colors = createGradient(Color.WHITE,Color.RED,15);
 			
-	public static final int BORDER_THICKNESS = 1;
+	public static final int BORDER_THICKNESS = 3;
 
 	public static final int BOARD_Y_OFFSET = 40;
 
 	public static final int WIDTH  = BoardState.GRID_COLS * ScreenState.TILE_WIDTH  + (BoardState.GRID_COLS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
 	public static final int HEIGHT = BOARD_Y_OFFSET + BoardState.GRID_ROWS * ScreenState.TILE_HEIGHT + (BoardState.GRID_ROWS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
+
+	private static final Stroke LINE_STROKE = new BasicStroke( BORDER_THICKNESS );
 
 	protected Font numberFont;
 	protected Font textFont;
@@ -200,14 +204,17 @@ public final class GameScreen extends JPanel
 		final int boardHeight = HEIGHT - BOARD_Y_OFFSET-1;
 
 		gfx.setColor(COLOR_GRID);
-		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= BoardState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+1 )
+		Stroke old = gfx.getStroke();
+		gfx.setStroke( LINE_STROKE );
+		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= BoardState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+BORDER_THICKNESS )
 		{
 			gfx.drawLine( 0, y , boardWidth , y );
 		}
-		for ( int x=0,i = 0 ; i <= BoardState.GRID_COLS ; i++, x += ScreenState.TILE_WIDTH+1 )
+		for ( int x=0,i = 0 ; i <= BoardState.GRID_COLS ; i++, x += ScreenState.TILE_WIDTH + BORDER_THICKNESS )
 		{
 			gfx.drawLine( x , BOARD_Y_OFFSET , x , BOARD_Y_OFFSET+boardHeight );
 		}
+		gfx.setStroke(old);
 
 		// draw tiles
 		gfx.setFont( numberFont );
