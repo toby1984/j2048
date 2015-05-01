@@ -25,7 +25,7 @@ public class Main
 	public void run()
 	{
 		final ScreenState screenState = new ScreenState( tickListeners );
-		final BoardState state = new BoardState( screenState );
+		final BoardWithScreenState state = new BoardWithScreenState( screenState );
 		
 		restartGame(state);
 
@@ -47,7 +47,7 @@ public class Main
 		mainLoop(state, screenState , panel);
 	}
 
-	private void mainLoop(final BoardState state, final ScreenState screenState, final GameScreen panel)
+	private void mainLoop(final BoardWithScreenState state, final ScreenState screenState, final GameScreen panel)
 	{
 		long time = System.currentTimeMillis();
 		while ( true )

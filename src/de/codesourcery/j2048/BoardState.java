@@ -1,8 +1,8 @@
 package de.codesourcery.j2048;
 
-import de.codesourcery.j2048.ScreenState.Batch;
 
-public final class BoardState
+
+public class BoardState
 {
 	// grid size
 	public static final int GRID_COLS = 4;
@@ -10,21 +10,25 @@ public final class BoardState
 
 	public static final int EMPTY_TILE =  0x000000;
 
-	public final ScreenState screenState;
-
 	public final int[] grid=new int[ GRID_COLS * GRID_ROWS ];
 	private int score;
 	private boolean gameOver;
-
-	public BoardState(ScreenState screenState)
-	{
-		this.screenState = screenState;
-		reset();
+	
+	public BoardState() {
 	}
-
-	public void reset()
+	
+	public final BoardState createCopy() 
 	{
-		screenState.reset();
+		final BoardState copy = new BoardState();
+		System.arraycopy( this.grid , 0 , copy.grid , 0 , GRID_COLS * GRID_ROWS );
+		copy.score = this.score;
+		copy.gameOver = this.gameOver;
+		return copy;
+	}	
+
+	public final void reset()
+	{
+		resetScreenState();
 
 		gameOver = false;
 		score = 0;
@@ -34,17 +38,13 @@ public final class BoardState
 			grid[ i ] = EMPTY_TILE;
 		}
 	}
-
-	public int getTile(int x,int y) {
+	
+	public final int getTile(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
-		try {
-			return grid[ptr];
-		} catch(ArrayIndexOutOfBoundsException e) {
-			throw new ArrayIndexOutOfBoundsException("AIOOBE @ "+ptr+" , x= "+x+", y="+y);
-		}
+		return grid[ptr];
 	}
 
-	public boolean isBoardFull()
+	public final boolean isBoardFull()
 	{
 		for ( int i = 0 ; i < GRID_COLS*GRID_ROWS ; i++ ) {
 			if ( grid[i] == EMPTY_TILE ) {
@@ -54,10 +54,10 @@ public final class BoardState
 		return true;
 	}
 
-	public void setTileValue(int x,int y,int value)
+	public final void setTileValue(int x,int y,int value)
 	{
 		internalSetTileValue(x,y,value);
-		screenState.setTileValue( x , y , value );
+		setScreenState(x, y, value);
 	}
 
 	private void internalSetTileValue(int x,int y,int value)
@@ -69,28 +69,28 @@ public final class BoardState
 	private void clearTile(int x,int y)
 	{
 		internalClearTile(x,y);
-		screenState.clear( x, y );
+		clearScreenState(x,y);
 	}
-
+	
 	private void internalClearTile(int x,int y)
 	{
 		final int ptr = x+y*GRID_COLS;
 		grid[ptr] = EMPTY_TILE;
 	}
 
-	public boolean isOccupied(int x,int y) {
+	public final boolean isOccupied(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
 		return grid[ptr] != EMPTY_TILE;
 	}
 
-	public boolean isEmpty(int x,int y) {
+	public final boolean isEmpty(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
 		return grid[ptr] == EMPTY_TILE;
 	}
+	
+	public final boolean tiltLeft() {
 
-	public boolean tiltLeft() {
-
-		final Batch batch = screenState.startBatch();
+		startBatch();
 		
 		final boolean[] moved = {false};
 		final Runnable run = () ->
@@ -108,7 +108,7 @@ public final class BoardState
 		};
 
 		run.run();
-		batch.syncPoint();
+		sync();
 		
 		// merge left
 		boolean merged = false;
@@ -130,18 +130,18 @@ public final class BoardState
 				}
 			}
 		}
-		batch.syncPoint();	
+		sync();	
 		
 		if ( merged ) {
 			run.run();
 		}
-		batch.close();
+		close();
 		return moved[0] | merged;
 	}
 
-	public boolean tiltRight()
+	public final boolean tiltRight()
 	{
-		final Batch batch = screenState.startBatch();
+		startBatch();
 		
 		final boolean[] moved = { false} ;
 		final Runnable run = () ->
@@ -158,7 +158,7 @@ public final class BoardState
 			}
 		};
 		run.run();
-		batch.syncPoint();
+		sync();
 
 		// merge right
 		boolean merged = false;
@@ -179,21 +179,20 @@ public final class BoardState
 				}
 			}
 		}
-		batch.syncPoint();
+		sync();
 		
 		if ( merged ) {
 			run.run();
 		}
-		batch.close();		
+		close();		
 		return moved[0] | merged;
 	}
 
-	public boolean tiltDown()
+	public final boolean tiltDown()
 	{
+		startBatch();
+
 		final boolean[] moved={false};
-		
-		final Batch batch = screenState.startBatch();
-		
 		final Runnable run = () -> {
 			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 			{
@@ -207,7 +206,7 @@ public final class BoardState
 			}
 		};
 		run.run();
-		batch.syncPoint();
+		sync();
 		
 		// merge downwards
 		boolean merged = false;
@@ -228,17 +227,17 @@ public final class BoardState
 				}
 			}
 		}
-		batch.syncPoint();
+		sync();
 		if ( merged ) {
 			run.run();
 		}
-		batch.close();
+		close();
 		return moved[0] | merged;
 	}
 
-	public boolean tiltUp()
+	public final boolean tiltUp()
 	{
-		final Batch batch = screenState.startBatch();
+		startBatch();
 		
 		// move tiles up
 		final boolean[] moved = {false};
@@ -256,7 +255,7 @@ public final class BoardState
 		};
 		
 		run.run();
-		batch.syncPoint();			
+		sync();			
 		
 		// merge adjacent tiles
 		boolean merged = false;
@@ -278,13 +277,13 @@ public final class BoardState
 			}
 		}
 		
-		batch.syncPoint();
+		sync();
 		// try to move remaining tiles to fill gaps
 		if ( merged ) {
 			run.run();
 		}
 		
-		batch.close();
+		close();
 		return moved[0] | merged;
 	}
 
@@ -301,7 +300,7 @@ public final class BoardState
 			moved=true;
 		}
 		if ( moved ) {
-			screenState.moveTile(initialX,initialY,x,y);
+			moveTile(initialX,initialY,x,y);
 		}		
 		return moved;
 	}
@@ -320,7 +319,7 @@ public final class BoardState
 			moved=true;
 		}
 		if ( moved ) {
-			screenState.moveTile(initialX,initialY,x,y);
+			moveTile(initialX,initialY,x,y);
 		}
 		return moved;
 	}
@@ -338,12 +337,30 @@ public final class BoardState
 			moved=true;
 		}
 		if ( moved ) {
-			screenState.moveTile(initialX,initialY,x,y);
+			moveTile(initialX,initialY,x,y);
 		}		
 		return moved;
 	}
 	
-	public boolean isGameOver() 
+	private boolean moveTileRight(int x,int y)
+	{
+		boolean moved = false;
+		final int initialX = x;
+		final int initialY = y;
+		while ( x < BoardState.GRID_COLS-1 && isEmpty(x+1, y ) )
+		{
+			internalSetTileValue( x+1,y, getTile(x, y) );
+			internalClearTile(x,y);
+			x++;
+			moved=true;
+		}
+		if ( moved ) {
+			moveTile(initialX,initialY,x,y);
+		}
+		return moved;
+	}
+	
+	public final boolean isGameOver() 
 	{
 		if ( gameOver ) {
 			return true;
@@ -382,27 +399,79 @@ public final class BoardState
 		}
 		gameOver = true;
 		return true;
-	}
-
-	private boolean moveTileRight(int x,int y)
+	}	
+	
+	public final int getPossibleActions() 
 	{
-		boolean moved = false;
-		final int initialX = x;
-		final int initialY = y;
-		while ( x < BoardState.GRID_COLS-1 && isEmpty(x+1, y ) )
+		int result = 0;
+		for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
 		{
-			internalSetTileValue( x+1,y, getTile(x, y) );
-			internalClearTile(x,y);
-			x++;
-			moved=true;
+			for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ ) 
+			{
+				final int tile = getTile(x, y);
+				if ( x-1 >= 0 ) { // check left neighbor
+					final int neighbor = getTile(x-1,y);
+					if ( neighbor == EMPTY_TILE ) {
+						result |= PossibleActions.MOVE_LEFT; 
+					} else if ( neighbor == tile ) {
+						result |= PossibleActions.MERGE_LEFT;
+					}
+				}
+				if ( x+1 < BoardState.GRID_COLS ) { // check right neighbor
+					final int neighbor = getTile(x+1,y);
+					if ( neighbor == EMPTY_TILE ) {
+						result |= PossibleActions.MOVE_RIGHT;
+					} 
+					else if ( neighbor == tile ) {
+						result |= PossibleActions.MERGE_RIGHT;
+					}
+				}
+				if ( y-1 >= 0 ) { // check top neighbor
+					final int neighbor = getTile(x,y-1);
+					if ( neighbor == EMPTY_TILE ) {
+						result |= PossibleActions.MOVE_DOWN;
+					} 
+					else if ( neighbor == tile ) {
+						result |= PossibleActions.MERGE_DOWN;
+					}
+				}		
+				if ( y+1 < BoardState.GRID_ROWS ) { // check bottom neighbor
+					final int neighbor = getTile(x,y+1);
+					if ( neighbor == EMPTY_TILE ) {
+						result |= PossibleActions.MOVE_UP;
+					} 
+					else if ( neighbor == tile ) {
+						result |= PossibleActions.MERGE_UP;
+					}
+				}					
+			}
 		}
-		if ( moved ) {
-			screenState.moveTile(initialX,initialY,x,y);
-		}
-		return moved;
+		return result;
 	}
 	
-	public int getScore() {
+	public final int getScore() {
 		return score;
 	}
+	
+	// overridable stuff
+	protected void resetScreenState() {
+	}	
+	
+	protected void moveTile(int initialX,int initialY,int x,int y) {
+	}
+	
+	protected void startBatch() {
+	}
+	
+	protected void sync() {
+	}	
+	
+	protected void close() {
+	}
+	
+	protected void clearScreenState(int x,int y) {
+	}
+	
+	protected void setScreenState(int x, int y, int value) {
+	}	
 }

@@ -6,6 +6,8 @@ import de.codesourcery.j2048.TickListenerContainer.ITickListener;
 
 public final class TileMovingTickListener implements ITickListener
 {
+	private static final float MOVEMENT_SPEED = 20;
+	
 	private final Tile tile;
 
 	private final int destX;
@@ -16,7 +18,7 @@ public final class TileMovingTickListener implements ITickListener
 	
 	private float currentX;
 	private float currentY;
-
+	
 	public TileMovingTickListener(Tile t,int destTileX,int destTileY)
 	{
 		this.tile = t;
@@ -29,18 +31,16 @@ public final class TileMovingTickListener implements ITickListener
 		this.destX = GameScreen.BORDER_THICKNESS + destTileX * ScreenState.TILE_WIDTH  + xBorderOffset;
 		this.destY = GameScreen.BORDER_THICKNESS + destTileY * ScreenState.TILE_HEIGHT + yBorderOffset;
 
-		final float speed = 20;
 		if ( t.tileX != destTileX ) {
-			this.deltaX = destTileX > t.tileX ? speed : -speed; // (destX - currentX) / 12.0f;
+			this.deltaX = destTileX > t.tileX ? MOVEMENT_SPEED : -MOVEMENT_SPEED; 
 		} else {
 			this.deltaX = 0;
 		}
 		if ( t.tileY != destTileY ) {
-			this.deltaY = destTileY > t.tileY ? speed : -speed; // (destY - currentY ) / 12.0f;
+			this.deltaY = destTileY > t.tileY ? MOVEMENT_SPEED : -MOVEMENT_SPEED;
 		} else {
 			this.deltaY = 0;
 		}
-		System.out.println("Moving tile from ("+this.currentX+","+this.currentY+") -> ("+this.destX+","+this.destY+") , dx="+deltaX+", dy="+deltaY);		
 	}
 
 	@Override

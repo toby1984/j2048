@@ -137,7 +137,7 @@ public final class GameScreen extends JPanel
 		}
 	}
 
-	public void render(BoardState state)
+	public void render(BoardWithScreenState state)
 	{
 		synchronized(BUFFER_LOCK)
 		{
@@ -152,7 +152,7 @@ public final class GameScreen extends JPanel
 		}
 	}
 
-	private void doRender(BoardState state)
+	private void doRender(BoardWithScreenState state)
 	{
 		final Graphics2D gfx = getBackBufferGfx();
 		if ( numberFont == null ) {
