@@ -12,15 +12,19 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AIPlayer implements IInputProvider {
+public final class AIPlayer implements IInputProvider {
 
-	private static final int MAX_DEPTH = 9;
+	private static final boolean BENCHMARK = true;
+	
+	private static final int MAX_DEPTH = 8;
 	
 	private final Map<Integer,Integer> scores = new HashMap<>();
 	
 	protected static enum Player { AI , RND };
 
 	private final ThreadPoolExecutor executor;
+	
+	protected volatile long positions = 0;
 	
 	protected final class CalcTask implements Runnable {
 
@@ -129,10 +133,17 @@ public class AIPlayer implements IInputProvider {
 			});
 			return Action.RESTART;
 		}
-//		long time = -System.currentTimeMillis();
+		positions = 0;
+		long time;
+		if ( BENCHMARK ) {
+			time = -System.currentTimeMillis();
+		}
 		Action result = doGetAction(state);
-//		time += System.currentTimeMillis();
-//		System.out.println("time: "+time+" ms");
+		if ( BENCHMARK ) {
+			time += System.currentTimeMillis();
+			float seconds = time/1000f;
+			System.out.println("time: "+time+" ms , "+positions+" positions (="+(positions/seconds)+" positions/s))");
+		}
 		return result;
 	}
 
@@ -159,6 +170,7 @@ public class AIPlayer implements IInputProvider {
 			tasks.add( new CalcTask( Action.TILT_RIGHT, copy , latch ) );
 		}			
 
+		System.out.println("Forking "+tasks.size()+" tasks");
 		tasks.forEach( executor::submit );
 
 		latch.await();
@@ -200,7 +212,7 @@ function alphabeta(node, depth, α, β, maximizingPlayer)
 	
 	private int alphaBeta(BoardState state,int currentDepth,int alpha,int beta,Player player) 
 	{	
-		if ( currentDepth == 0 || state.isGameOver() ) {
+		if ( state.isGameOver() || ( currentDepth <= 0 && positions > 2000000 ) ) {
 			return calcScore( state );
 		}
 		
@@ -310,31 +322,27 @@ function minimax(node, depth, maximizingPlayer)
 
 	private int calcScore(BoardState state) 
 	{
-//		final int totalSlots = BoardState.GRID_COLS*BoardState.GRID_ROWS;
-//		final int tileCount = state.getTileCount();
-//		final int freeSlots = totalSlots - tileCount;
-//		if ( freeSlots == 0 && state.isGameOver() ) {
-//			return 0;
-//		}
-		
+		positions++;
+		final int freeSlotCount = BoardState.GRID_COLS*BoardState.GRID_ROWS - state.getTileCount();
+		if ( state.isGameOver() ) {
+			return 0;
+		}
 		// calculate sum around edges
 		int score = 0;
 		for ( int y = 0 ; y < BoardState.GRID_ROWS ;y++) 
 		{
 			for ( int x = 0 ; x < BoardState.GRID_COLS ;x++) 
 			{
+				int tile = state.getTile(x, y);
 				if ( x == 0 || y == 0 || x == BoardState.GRID_COLS-1 || y == BoardState.GRID_ROWS-1 ) {
-					int tile = state.getTile(x, y);
-					if ( tile != BoardState.EMPTY_TILE) {
-						score += (1<<tile);
-					}
+					score += 8*(1<< (tile & ~0xffffffff));
+				} else {
+					score += (1<< (tile & ~0xffffffff));
 				}
 			}
 		}
-		score /= state.getTileCount();
-		
-//		 return (int) ( (freeSlots/(float) totalSlots) * score );
-		return score;
+
+		return score * freeSlotCount;
 	}
 
 	private List<BoardState> generateRandomMoves(BoardState state)
@@ -364,7 +372,7 @@ function minimax(node, depth, maximizingPlayer)
 	
 	public static void main(String[] args) {
 		
-		final Random rnd = new Random(System.currentTimeMillis());
+		final Random rnd = new Random(0xdeadbeef);
 		final BoardState state = new BoardState();
 		state.reset();
 		

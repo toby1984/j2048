@@ -12,9 +12,10 @@ public class BoardState
 
 	public static final int EMPTY_TILE =  0x000000;
 
-	public final int[] grid=new int[ GRID_COLS * GRID_ROWS ];
+	public final int[] board=new int[ GRID_COLS * GRID_ROWS ];
 	private int score;
 	private boolean gameOver;
+	private int tileCount;
 
 	public BoardState() {
 	}
@@ -22,25 +23,16 @@ public class BoardState
 	public final BoardState createCopy() 
 	{
 		final BoardState copy = new BoardState();
-		System.arraycopy( this.grid , 0 , copy.grid , 0 , GRID_COLS * GRID_ROWS );
+		System.arraycopy( this.board , 0 , copy.board , 0 , GRID_COLS * GRID_ROWS );
 		copy.score = this.score;
 		copy.gameOver = this.gameOver;
+		copy.tileCount = this.tileCount;
 		return copy;
 	}	
 	
 	public final int getTileCount() 
 	{
-		int count = 0;
-		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
-		{
-			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
-			{
-				if ( getTile(x, y) != BoardState.EMPTY_TILE ) {
-					count++;
-				}
-			}
-		}
-		return count;
+		return tileCount;
 	}
 	
 	public final int getHighestTileValue() 
@@ -83,26 +75,22 @@ public class BoardState
 
 		gameOver = false;
 		score = 0;
+		tileCount = 0;
 
 		for ( int i = 0 ; i < GRID_COLS*GRID_ROWS ; i++ )
 		{
-			grid[ i ] = EMPTY_TILE;
+			board[i] = EMPTY_TILE;
 		}
 	}
 
 	public final int getTile(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
-		return grid[ptr];
+		return board[ptr];
 	}
 
 	public final boolean isBoardFull()
 	{
-		for ( int i = 0 ; i < GRID_COLS*GRID_ROWS ; i++ ) {
-			if ( grid[i] == EMPTY_TILE ) {
-				return false;
-			}
-		}
-		return true;
+		return tileCount == GRID_COLS*GRID_ROWS;
 	}
 
 	public final void setTileValue(int x,int y,int value)
@@ -114,7 +102,11 @@ public class BoardState
 	private void internalSetTileValue(int x,int y,int value)
 	{
 		final int ptr = x+y*GRID_COLS;
-		grid[ptr] = value;
+		if ( board[ptr] == EMPTY_TILE ) 
+		{
+			tileCount++;
+		}
+		board[ptr] = value;
 	}
 
 	private void clearTile(int x,int y)
@@ -126,17 +118,20 @@ public class BoardState
 	private void internalClearTile(int x,int y)
 	{
 		final int ptr = x+y*GRID_COLS;
-		grid[ptr] = EMPTY_TILE;
+		if ( board[ptr] != EMPTY_TILE ) {
+			tileCount--;
+		}
+		board[ptr] = EMPTY_TILE;
 	}
 
 	public final boolean isOccupied(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
-		return grid[ptr] != EMPTY_TILE;
+		return board[ptr] != EMPTY_TILE;
 	}
 
 	public final boolean isEmpty(int x,int y) {
 		final int ptr = x+y*GRID_COLS;
-		return grid[ptr] == EMPTY_TILE;
+		return board[ptr] == EMPTY_TILE;
 	}
 
 	public final boolean tiltLeft() {
