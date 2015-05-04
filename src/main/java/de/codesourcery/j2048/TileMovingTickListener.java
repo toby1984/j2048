@@ -28,7 +28,7 @@ public final class TileMovingTickListener implements ITickListener
 {
 	private static final float MOVEMENT_SPEED = 640;
 	
-	public static final boolean MOVE_INSTANTLY = false;
+	public static final boolean MOVE_INSTANTLY = Main.USE_AI;
 	
 	private final Tile tile;
 

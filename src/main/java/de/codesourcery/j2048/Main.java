@@ -28,6 +28,8 @@ import de.codesourcery.j2048.IInputProvider.Action;
  */
 public class Main
 {
+	public static boolean USE_AI = false;
+	
 	private final TickListenerContainer tickListeners = new TickListenerContainer();
 	private final Random rnd = new Random(System.currentTimeMillis());
 	private final IInputProvider inputProvider;
@@ -40,6 +42,7 @@ public class Main
 		{
 			new Main(new KeyboardInputProvider() ).run();
 		} else {
+			USE_AI = true;
 			new Main(new AIPlayer() ).run();
 		}
 	}

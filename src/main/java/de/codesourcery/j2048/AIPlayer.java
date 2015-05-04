@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class AIPlayer implements IInputProvider {
 
-	private static final boolean BENCHMARK = true;
+	private static final boolean BENCHMARK = false;
 	
 	private static final int MAX_DEPTH = 8;
 	
@@ -193,7 +193,6 @@ public final class AIPlayer implements IInputProvider {
 			tasks.add( new CalcTask( Action.TILT_RIGHT, copy , latch ) );
 		}			
 
-		System.out.println("Forking "+tasks.size()+" tasks");
 		tasks.forEach( executor::submit );
 
 		latch.await();
