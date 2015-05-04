@@ -323,6 +323,7 @@ function minimax(node, depth, maximizingPlayer)
 	private int calcScore(BoardState state) 
 	{
 		positions++;
+		
 		final int freeSlotCount = BoardState.GRID_COLS*BoardState.GRID_ROWS - state.getTileCount();
 		if ( state.isGameOver() ) {
 			return 0;

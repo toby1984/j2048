@@ -1,5 +1,6 @@
 package de.codesourcery.j2048;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -156,6 +157,14 @@ public class ScreenState implements ITickListener
 				});
 			}
 	}
+	
+	public static void getTileLocation(int tileX,int tileY,Point point)
+	{
+		final int xBorderOffset = tileX*GameScreen.BORDER_THICKNESS;
+		final int yBorderOffset = tileY*GameScreen.BORDER_THICKNESS;
+		point.x = GameScreen.BORDER_THICKNESS + tileX * TILE_WIDTH  + xBorderOffset;
+		point.y = GameScreen.BORDER_THICKNESS + tileY * TILE_HEIGHT + yBorderOffset;
+	}
 
 	public ScreenState(TickListenerContainer container)
 	{
@@ -211,10 +220,7 @@ public class ScreenState implements ITickListener
 	{
 		for (int i = 0; i < tiles.size(); i++) 
 		{
-			final Tile t = tiles.get(i);
-			if ( t.isOccupied() ) {
-				visitor.accept( t  );
-			}
+			visitor.accept( tiles.get(i)  );
 		}
 	}
 

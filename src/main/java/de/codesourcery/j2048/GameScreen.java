@@ -5,7 +5,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.Toolkit;
 import java.awt.font.LineMetrics;
@@ -29,7 +31,7 @@ public final class GameScreen extends JPanel
 	// 1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384
 	protected final Color[] colors = createGradient(Color.WHITE,Color.RED,15);
 			
-	public static final int BORDER_THICKNESS = 3;
+	public static final int BORDER_THICKNESS = 4;
 
 	public static final int BOARD_Y_OFFSET = 40;
 
@@ -152,7 +154,13 @@ public final class GameScreen extends JPanel
 		buffers[1] = new BufferedImage( WIDTH,HEIGHT, BufferedImage.TYPE_INT_RGB);
 		bufferGfxs[0] = buffers[0].createGraphics();
 		bufferGfxs[1] = buffers[1].createGraphics();
+		
+		bufferGfxs[0].getRenderingHints().put( RenderingHints.KEY_ANTIALIASING , RenderingHints.VALUE_ANTIALIAS_ON);
+		bufferGfxs[0].getRenderingHints().put( RenderingHints.KEY_RENDERING , RenderingHints.VALUE_RENDER_QUALITY);		
 
+		bufferGfxs[1].getRenderingHints().put( RenderingHints.KEY_ANTIALIASING , RenderingHints.VALUE_ANTIALIAS_ON);
+		bufferGfxs[1].getRenderingHints().put( RenderingHints.KEY_RENDERING , RenderingHints.VALUE_RENDER_QUALITY);	
+		
 		bufferGfxs[0].setColor( getBackground() );
 		bufferGfxs[0].fillRect(0 , 0 , WIDTH , HEIGHT );
 
@@ -196,42 +204,48 @@ public final class GameScreen extends JPanel
 		}
 
 		// clear screen
-		gfx.setColor( COLOR_BACKGROUND );
+		gfx.setColor( COLOR_GRID );
 		gfx.fillRect( 0 , 0 , WIDTH , HEIGHT );
 
-		// draw grid lines
-		final int boardWidth = WIDTH;
-		final int boardHeight = HEIGHT - BOARD_Y_OFFSET-1;
-
-		gfx.setColor(COLOR_GRID);
-		Stroke old = gfx.getStroke();
-		gfx.setStroke( LINE_STROKE );
-		for ( int y = BOARD_Y_OFFSET ,i = 0 ; i <= BoardState.GRID_ROWS ; i++, y+= ScreenState.TILE_HEIGHT+BORDER_THICKNESS )
+		// draw grid with blank tiles
+		gfx.setBackground( COLOR_GRID );
+		gfx.setColor( Color.WHITE );
+		final Point p = new Point();
+		final Rectangle r = new Rectangle();
+		final int ARC = 20;
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ ) 
 		{
-			gfx.drawLine( 0, y , boardWidth , y );
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
+			{
+				ScreenState.getTileLocation( x , y , p );
+				final int px = p.x;
+				final int py = BOARD_Y_OFFSET + p.y;
+				gfx.fillRoundRect( px,py,ScreenState.TILE_WIDTH,ScreenState.TILE_HEIGHT , ARC , ARC );
+			}
 		}
-		for ( int x=0,i = 0 ; i <= BoardState.GRID_COLS ; i++, x += ScreenState.TILE_WIDTH + BORDER_THICKNESS )
-		{
-			gfx.drawLine( x , BOARD_Y_OFFSET , x , BOARD_Y_OFFSET+boardHeight );
-		}
-		gfx.setStroke(old);
 
 		// draw tiles
 		gfx.setFont( numberFont );
 		state.screenState.visitOccupiedTiles( tile ->
 		{
-			final int value = 1 << tile.value;
-			final Rectangle r = new Rectangle( tile.x , BOARD_Y_OFFSET + tile.y , ScreenState.TILE_WIDTH , ScreenState.TILE_HEIGHT );
-			gfx.setColor( colors[tile.value-1] );
-			gfx.fillRect( r.x , r.y , r.width, r.height );
+			r.x = tile.x;
+			r.y = BOARD_Y_OFFSET + tile.y;
+			r.width = ScreenState.TILE_WIDTH;
+			r.height = ScreenState.TILE_HEIGHT;
+			final int value = 1 << tile.value;			
+			gfx.setColor( colors[tile.value-1] );				
+			gfx.fillRoundRect( r.x , r.y , r.width, r.height , ARC , ARC  );
 			gfx.setColor(COLOR_TILE_FOREGROUND);
 			renderCenteredText( Integer.toString( value ) , r , gfx );
 		});
 
 		// render score
-		gfx.setColor(COLOR_SCORE);
 		gfx.setFont( textFont );
-		gfx.drawString( "Score: "+state.getScore(),5,30);
+		final String text = "Score: "+state.getScore();
+		gfx.setColor( Color.WHITE );
+		gfx.fillRect(0,0,getWidth(), BOARD_Y_OFFSET );
+		gfx.setColor(COLOR_SCORE);
+		gfx.drawString( text,5,30);
 
 		// render game over screen
 		if ( state.isGameOver() ) {

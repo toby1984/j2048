@@ -6,9 +6,9 @@ import de.codesourcery.j2048.TickListenerContainer.ITickListener;
 
 public final class TileMovingTickListener implements ITickListener
 {
-	private static final float MOVEMENT_SPEED = 20;
+	private static final float MOVEMENT_SPEED = 640;
 	
-	public static final boolean MOVE_INSTANTLY = true;
+	public static final boolean MOVE_INSTANTLY = false;
 	
 	private final Tile tile;
 
@@ -48,8 +48,9 @@ public final class TileMovingTickListener implements ITickListener
 	@Override
 	public boolean tick(ITickContext ctx)
 	{
-		this.currentX += deltaX;
-		this.currentY += deltaY;
+		final float time = ctx.getDeltaSeconds();
+		this.currentX += (deltaX*time);
+		this.currentY += (deltaY*time);
 
 		tile.x = (int) this.currentX;
 		tile.y = (int) this.currentY;

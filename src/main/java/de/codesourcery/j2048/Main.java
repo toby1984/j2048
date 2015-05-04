@@ -54,7 +54,9 @@ public class Main
 
 	private void mainLoop(final BoardWithScreenState state, final ScreenState screenState, final GameScreen panel)
 	{
-		long time = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
+		long time = startTime;
+		long frames = 0;
 		while ( true )
 		{
 			final long now = System.currentTimeMillis();
@@ -85,11 +87,16 @@ public class Main
 
 			// render
 			panel.render( state );
+			frames++;
+			if ( (frames % 60) == 0) {
+				float elapsedSeconds = (System.currentTimeMillis()-startTime)/1000f;
+				System.out.println("FPS: "+(frames/elapsedSeconds));
+			}
 
 			// sleep some time
 			try
 			{
-				Thread.sleep( 14 );
+				Thread.sleep( 10 );
 			}
 			catch(InterruptedException e)
 			{
