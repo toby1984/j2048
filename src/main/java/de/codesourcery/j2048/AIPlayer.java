@@ -39,7 +39,7 @@ public final class AIPlayer implements IInputProvider {
 
 	private static final boolean BENCHMARK = false;
 	
-	private static final int MAX_DEPTH = 8;
+	private static final int MAX_DEPTH = 6;
 	
 	private final Map<Integer,Integer> scores = new HashMap<>();
 	
