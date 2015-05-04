@@ -4,6 +4,8 @@ This is a simple 2048 clone in Java, written mostly because I wanted to implemen
 
 Architecture-wise I'm rather pleased with the solution, unfortunately the scoring function I'm using for the AI (which is just minimax with alpha-beta pruning) is pretty lackluster to say the least (you're lucky to see it getting tile values larger than 1024).
 
+<img src="https://github.com/toby1984/j2048/blob/master/screenshot.png?raw=true'" />
+
 ## Build requirements 
 
 * JDK >= 1.8
