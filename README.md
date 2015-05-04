@@ -12,8 +12,22 @@ Architecture-wise I'm rather pleased with the solution, unfortunately the scorin
 ## How to build
 
 Just run
-  mvn clean compile exec:java
-  
+```
+  mvn packate
+```
+
+## How to run
+
+Building the project will generate a self-executable JAR in the 'target' folder.
+
+Execute it (assuming java is on your path) by simply running
+
+```
+java -jar target/j2048.jar [-ai]
+```
+
+The optional '-ai' option starts the game in 'auto-play' mode where the AI will try to solve the game.
+
 ## Controls
 
 You may either use WASD or your cursor keys to control the game. Hitting the ENTER key or pressing the 'Restart' button will restart the game.
