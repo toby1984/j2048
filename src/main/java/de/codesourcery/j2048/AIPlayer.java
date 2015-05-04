@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 Tobias Gierke <tobias.gierke@code-sourcery.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.codesourcery.j2048;
 
 import java.awt.Component;
@@ -12,6 +27,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * {@link IInputProvider} that uses the minimax-algorithm with alpha-beta pruning
+ * to generate an action.
+ * 
+ * <p>The scoring function is currently really weak, you're lucky to see the algorithm reach 1024.</p>
+ *
+ * @author tobias.gierke@code-sourcery.de
+ */
 public final class AIPlayer implements IInputProvider {
 
 	private static final boolean BENCHMARK = true;
@@ -188,28 +211,6 @@ public final class AIPlayer implements IInputProvider {
 		return bestAction;
 	}
 
-	/*
-function alphabeta(node, depth, α, β, maximizingPlayer)
-      if depth = 0 or node is a terminal node
-          return the heuristic value of node
-      if maximizingPlayer
-          v := -∞
-          for each child of node
-              v := max(v, alphabeta(child, depth - 1, α, β, FALSE))
-              α := max(α, v)
-              if β ≤ α
-                  break (* β cut-off *)
-          return v
-      else
-          v := ∞
-          for each child of node
-              v := min(v, alphabeta(child, depth - 1, α, β, TRUE))
-              β := min(β, v)
-              if β ≤ α
-                  break (* α cut-off *)
-          return v	 
-	 */
-	
 	private int alphaBeta(BoardState state,int currentDepth,int alpha,int beta,Player player) 
 	{	
 		if ( state.isGameOver() || ( currentDepth <= 0 && positions > 2000000 ) ) {
@@ -247,55 +248,6 @@ function alphabeta(node, depth, α, β, maximizingPlayer)
 		return bestValue;		
 		
 	}
-
-	private int miniMax(BoardState state,int currentDepth,Player maximizingPlayer) 
-	{	
-		if ( currentDepth == 0 || state.isGameOver() ) {
-			return calcScore( state );
-		}
-
-		int bestValue; 
-		if ( maximizingPlayer == Player.RND) 
-		{
-			bestValue = Integer.MIN_VALUE;
-
-			final List<BoardState> moves = generateRandomMoves( state );
-			for (int i = 0 , len = moves.size() ; i < len; i++) {
-				final BoardState m = moves.get(i);
-				final int val = miniMax( m , currentDepth - 1 , Player.AI);
-				bestValue = Math.max(bestValue,val);
-			}
-		} 
-		else 
-		{
-			bestValue = Integer.MAX_VALUE;
-			final List<BoardState> moves = generatePlayerMoves( state );
-			for (int i = 0 , len = moves.size() ; i < len ; i++) {
-				final BoardState m = moves.get(i);
-				final int val = miniMax( m , currentDepth - 1 , Player.RND );
-				bestValue = Math.min(bestValue,val);
-			}
-		}
-		return bestValue;
-	}
-
-	/*
-function minimax(node, depth, maximizingPlayer)
-    if depth = 0 or node is a terminal node
-        return the heuristic value of node
-    if maximizingPlayer
-        bestValue := -∞
-        for each child of node
-            val := minimax(child, depth - 1, FALSE)
-            bestValue := max(bestValue, val)
-        return bestValue
-    else
-        bestValue := +∞
-        for each child of node
-            val := minimax(child, depth - 1, TRUE)
-            bestValue := min(bestValue, val)
-        return bestValue	 
-	 */	
 
 	private List<BoardState> generatePlayerMoves(BoardState state)
 	{

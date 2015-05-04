@@ -1,9 +1,29 @@
+/**
+ * Copyright 2015 Tobias Gierke <tobias.gierke@code-sourcery.de>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.codesourcery.j2048;
 
 import de.codesourcery.j2048.ScreenState.Tile;
-import de.codesourcery.j2048.TickListenerContainer.ITickContext;
 import de.codesourcery.j2048.TickListenerContainer.ITickListener;
 
+/**
+ * An {@link ITickListener} responsible for animating/moving a tile by
+ * continously updating its screen position. 
+ *
+ * @author tobias.gierke@code-sourcery.de
+ */
 public final class TileMovingTickListener implements ITickListener
 {
 	private static final float MOVEMENT_SPEED = 640;
@@ -46,11 +66,10 @@ public final class TileMovingTickListener implements ITickListener
 	}
 
 	@Override
-	public boolean tick(ITickContext ctx)
+	public boolean tick(float deltaSeconds)
 	{
-		final float time = ctx.getDeltaSeconds();
-		this.currentX += (deltaX*time);
-		this.currentY += (deltaY*time);
+		this.currentX += (deltaX*deltaSeconds);
+		this.currentY += (deltaY*deltaSeconds);
 
 		tile.x = (int) this.currentX;
 		tile.y = (int) this.currentY;
