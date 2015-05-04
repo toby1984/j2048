@@ -13,7 +13,7 @@ Architecture-wise I'm rather pleased with the solution, unfortunately the scorin
 
 Just run
 ```
-  mvn packate
+  mvn package
 ```
 
 ## How to run
