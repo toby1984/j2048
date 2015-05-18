@@ -65,7 +65,7 @@ public final class GameScreen extends JPanel implements ITickListener
 	public static final int HEIGHT = BOARD_Y_OFFSET + BoardState.GRID_ROWS * ScreenState.TILE_HEIGHT + (BoardState.GRID_ROWS-1)*BORDER_THICKNESS + 2*BORDER_THICKNESS;
 
 	protected final RenderedButton restartButton;
-	
+
 	protected final Font numberFont;
 	protected final Font textFont;
 	protected final Font gameOverFont;
@@ -80,27 +80,27 @@ public final class GameScreen extends JPanel implements ITickListener
 
 	private int bufferIndex;
 
-	public GameScreen() 
+	public GameScreen()
 	{
 		setBackground(COLOR_BACKGROUND);
-		
+
 		final Dimension windowSize = new Dimension(WIDTH,HEIGHT);
 		setPreferredSize( windowSize );
 		setMinimumSize( windowSize );
 		setMaximumSize( windowSize );
-		
+
 		numberFont = getFont().deriveFont( Font.BOLD , 24  );
 		textFont = getFont().deriveFont( Font.BOLD , 24  );
 		gameOverFont = getFont().deriveFont( Font.BOLD , 32  );
 		restartButton = new RenderedButton( "Restart" , numberFont , 210,5,105,30 );
-		
+
 		addMouseListener( new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e) 
+			public void mouseClicked(MouseEvent e)
 			{
-				if ( e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON1 ) 
+				if ( e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON1 )
 				{
-					if ( restartButton != null && restartButton.contains( e.getPoint() ) ) 
+					if ( restartButton != null && restartButton.contains( e.getPoint() ) )
 					{
 						restartButton.click();
 					}
@@ -108,12 +108,12 @@ public final class GameScreen extends JPanel implements ITickListener
 			}
 		});
 	}
-	
+
 	public RenderedButton getRestartButton() {
 		return restartButton;
 	}
 
-	private static Color[] createGradient(Color start,Color end,int steps) 
+	private static Color[] createGradient(Color start,Color end,int steps)
 	{
 		float r1 = start.getRed()/255f;
 		float r2 = end.getRed()/255f;
@@ -147,7 +147,7 @@ public final class GameScreen extends JPanel implements ITickListener
 		}
 		int value = Integer.parseInt( s , 16 );
 		return new Color((value >> 16) & 0xff , (value>>8) & 0xff, value & 0xff );
-	}	
+	}
 
 	private Graphics2D getBackBufferGfx()
 	{
@@ -227,7 +227,7 @@ public final class GameScreen extends JPanel implements ITickListener
 		synchronized(BUFFER_LOCK)
 		{
 			g.drawImage( getFrontBuffer() , 0 , 0 , null );
-			Toolkit.getDefaultToolkit().sync();			
+			Toolkit.getDefaultToolkit().sync();
 			BUFFER_LOCK.notifyAll();
 		}
 	}
@@ -246,7 +246,7 @@ public final class GameScreen extends JPanel implements ITickListener
 			}
 		}
 	}
-	
+
 	private void doRender(BoardWithScreenState state)
 	{
 		final Graphics2D gfx = getBackBufferGfx();
@@ -261,9 +261,9 @@ public final class GameScreen extends JPanel implements ITickListener
 		final Point p = new Point();
 		final Rectangle r = new Rectangle();
 		final int ARC = 20;
-		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ ) 
+		for ( int y = 0 ; y < BoardState.GRID_ROWS ; y++ )
 		{
-			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ ) 
+			for ( int x = 0 ; x < BoardState.GRID_COLS ; x++ )
 			{
 				ScreenState.getTileLocation( x , y , p );
 				final int px = p.x;
@@ -280,11 +280,16 @@ public final class GameScreen extends JPanel implements ITickListener
 			r.y = BOARD_Y_OFFSET + tile.y;
 			r.width = ScreenState.TILE_WIDTH;
 			r.height = ScreenState.TILE_HEIGHT;
-			final int value = 1 << tile.value;			
-			gfx.setColor( colors[tile.value-1] );				
+			final int value = 1 << tile.value;
+
+			gfx.setColor( colors[tile.value-1] );
 			gfx.fillRoundRect( r.x , r.y , r.width, r.height , ARC , ARC  );
+
 			gfx.setColor(COLOR_TILE_FOREGROUND);
 			renderCenteredText( Integer.toString( value ) , r , gfx );
+
+			gfx.setColor( COLOR_GRID );
+			gfx.drawRoundRect( r.x , r.y , r.width, r.height , ARC , ARC  );
 		});
 
 		// render score
@@ -301,37 +306,37 @@ public final class GameScreen extends JPanel implements ITickListener
 			gfx.setFont( gameOverFont );
 			renderCenteredText( "GAME OVER !!!", new Rectangle(0,0,WIDTH,HEIGHT ), gfx );
 		}
-		
+
 		// render button
 		restartButton.render(gfx);
-		
+
 		swapBuffers();
 	}
 
-	public static final class RenderedButton implements ITickListener 
+	public static final class RenderedButton implements ITickListener
 	{
 		private final Rectangle rect;
 		private final BufferedImage image;
 		private final Graphics2D graphics;
 		private final String label;
 		private final Stroke STROKE = new BasicStroke(2);
-		
+
 		// @GuardedBy(listeners)
 		private final List<Runnable> listeners = new ArrayList<>();
 
 		// @GuardedBy(listeners)
 		private boolean isPressed;
 		// @GuardedBy(listeners)
-		private float timeUntilRelease;		
-		
+		private float timeUntilRelease;
+
 		private final Rectangle tempRect = new Rectangle();
 
-		public RenderedButton(String label,Font font,int x,int y,int width, int height) 
+		public RenderedButton(String label,Font font,int x,int y,int width, int height)
 		{
 			this(label,font,new Rectangle(x,y,width,height));
 		}
-		
-		public RenderedButton(String label,Font font,Rectangle rect) 
+
+		public RenderedButton(String label,Font font,Rectangle rect)
 		{
 			this.label = label;
 			this.rect = new Rectangle(rect);
@@ -341,26 +346,26 @@ public final class GameScreen extends JPanel implements ITickListener
 			graphics.setStroke( STROKE );
 			setHQ( graphics );
 		}
-		
+
 		public boolean contains(Point p) {
 			return rect.contains( p );
 		}
 
-		public void addListener(Runnable r) 
+		public void addListener(Runnable r)
 		{
 			synchronized(listeners) {
 				listeners.add(r);
 			}
 		}
 
-		public void render(Graphics2D gfx) 
+		public void render(Graphics2D gfx)
 		{
 			gfx.drawImage( image, rect.x , rect.y , null );
 		}
 
-		public void click() 
+		public void click()
 		{
-			synchronized( listeners) 
+			synchronized( listeners)
 			{
 				if ( ! isPressed ) {
 					isPressed = true;
@@ -371,17 +376,17 @@ public final class GameScreen extends JPanel implements ITickListener
 		}
 
 		@Override
-		public boolean tick(float deltaSeconds) 
+		public boolean tick(float deltaSeconds)
 		{
 			final Color front;
 			final Color back;
-			synchronized(listeners) 
+			synchronized(listeners)
 			{
-				if ( isPressed) 
+				if ( isPressed)
 				{
 					timeUntilRelease -= deltaSeconds;
 					isPressed = timeUntilRelease > 0;
-				} 
+				}
 				front = isPressed ? Color.WHITE : Color.BLACK;
 				back  = isPressed ? Color.BLACK : Color.WHITE;
 			}
@@ -391,13 +396,13 @@ public final class GameScreen extends JPanel implements ITickListener
 			// draw outline
 			graphics.setColor( front );
 			graphics.drawRoundRect( 1 , 1 , rect.width-2 , rect.height-2 ,10,10);
-			
+
 			// draw label
 			tempRect.x = 2;
 			tempRect.y = 1;
 			tempRect.width = rect.width-3;
 			tempRect.height = rect.height;
-			
+
 			renderCenteredText(label, tempRect ,graphics);
 			return true;
 		}
@@ -416,11 +421,11 @@ public final class GameScreen extends JPanel implements ITickListener
 		final double cy=(top+((bottom+1-top)/2) - ((ascent + descent)/2)) + ascent;
 		gfx.drawString( text , (int) cx , (int) cy );
 	}
-	
+
 	protected static void setHQ(Graphics2D graphics) {
 		graphics.getRenderingHints().put(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
 		graphics.getRenderingHints().put(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-		graphics.getRenderingHints().put(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);		
+		graphics.getRenderingHints().put(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 	}
 
 	@Override
